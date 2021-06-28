@@ -1,0 +1,333 @@
+package conf
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+	"unicode"
+
+	"datacollector/log"
+)
+
+// conf types
+const (
+	StringType     = "string"
+	IntType        = "int"
+	Int64Type      = "int64"
+	Int32Type      = "int32"
+	BoolType       = "bool"
+	StringListType = "[]string"
+	AliasMapType   = "[string string, string]"
+)
+
+// MapConf 基于Map的配置信息
+type MapConf map[string]string
+
+type AliasKey struct {
+	Key   string
+	Alias string
+}
+
+func ErrConfMissingKey(key, dataType string) error {
+	return fmt.Errorf("MissingKey: The configs must contains %s, dataType must be %s", key, dataType)
+}
+
+func ErrConfKeyType(key, dataType string) error {
+	return fmt.Errorf("TypeError: The configs must contains %s, dataType must be %s", key, dataType)
+}
+
+func ErrMissConfigAliasMap() error {
+	return errors.New("AliasMapType must use format \"a b\" or \"a\",and split with \",\"")
+}
+
+func (conf MapConf) Get(key string) (interface{}, error) {
+	value, exist := conf[key]
+	if !exist {
+		return nil, fmt.Errorf("The configs must contains %s", key)
+	}
+	return value, nil
+}
+
+func (conf MapConf) GetStringOr(key string, deft string) (string, error) {
+	ret, err := conf.GetString(key)
+	if err != nil || ret == "" {
+		return deft, err
+	}
+	return ret, err
+}
+
+func (conf MapConf) GetString(key string) (string, error) {
+	value, exist := conf[key]
+	if !exist {
+		return "", ErrConfMissingKey(key, StringType)
+	}
+	allSpace := true
+	for _, v := range value {
+		if !unicode.IsSpace(v) {
+			allSpace = false
+			break
+		}
+	}
+	if allSpace {
+		return value, nil
+	}
+	return strings.TrimSpace(value), nil
+}
+
+func (conf MapConf) GetIntOr(key string, deft int) (int, error) {
+	ret, err := conf.GetInt(key)
+	if err != nil {
+		return deft, err
+	}
+	return ret, err
+}
+
+func (conf MapConf) GetInt(key string) (int, error) {
+	value, exist := conf[key]
+	if !exist {
+		return 0, ErrConfMissingKey(key, IntType)
+	}
+	v, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, ErrConfKeyType(key, IntType)
+	}
+	return v, nil
+}
+
+func (conf MapConf) GetInt32Or(key string, deft int32) (int32, error) {
+	ret, err := conf.GetInt32(key)
+	if err != nil {
+		return deft, err
+	}
+	return ret, nil
+}
+
+func (conf MapConf) GetInt32(key string) (int32, error) {
+	value, exist := conf[key]
+	if !exist {
+		return 0, ErrConfMissingKey(key, Int32Type)
+	}
+	v, err := strconv.ParseInt(value, 10, 32)
+	if err != nil {
+		return 0, ErrConfKeyType(key, Int32Type)
+	}
+	return int32(v), nil
+}
+
+func (conf MapConf) GetInt64Or(key string, deft int64) (int64, error) {
+	ret, err := conf.GetInt64(key)
+	if err != nil {
+		return deft, err
+	}
+	return ret, nil
+}
+
+func (conf MapConf) GetInt64(key string) (int64, error) {
+	value, exist := conf[key]
+	if !exist {
+		return 0, ErrConfMissingKey(key, Int64Type)
+	}
+	v, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return 0, ErrConfKeyType(key, Int64Type)
+	}
+	return v, nil
+}
+
+func (conf MapConf) GetBoolOr(key string, deft bool) (bool, error) {
+	ret, err := conf.GetBool(key)
+	if err != nil {
+		return deft, err
+	}
+	return ret, err
+}
+
+func (conf MapConf) GetBool(key string) (bool, error) {
+	value, exist := conf[key]
+	if !exist {
+		return false, ErrConfMissingKey(key, BoolType)
+	}
+	v, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, ErrConfKeyType(key, BoolType)
+	}
+	return v, nil
+}
+
+func (conf MapConf) GetStringListOr(key string, deft []string) ([]string, error) {
+	ret, err := conf.GetStringList(key)
+	if err != nil {
+		return deft, err
+	}
+	return ret, err
+}
+
+func (conf MapConf) GetStringList(key string) ([]string, error) {
+	value, exist := conf[key]
+	if !exist {
+		return []string{}, ErrConfMissingKey(key, StringListType)
+	}
+	newV := GetStringList(value)
+	if len(newV) <= 0 {
+		return []string{}, ErrConfKeyType(key, StringListType)
+	}
+	return newV, nil
+}
+
+func (c MapConf) GetAliasList(key string) (aks []AliasKey, err error) {
+	ks, err := c.GetStringList(key)
+	if err != nil {
+		return nil, err
+	}
+	for _, k := range ks {
+		parts := strings.Fields(k)
+		if len(parts) <= 0 {
+			continue
+		}
+		name := strings.TrimSpace(parts[0])
+		alias := name
+		if len(parts) >= 2 {
+			alias = strings.TrimSpace(parts[1])
+		}
+		aks = append(aks, AliasKey{Key: name, Alias: alias})
+	}
+	return aks, nil
+}
+
+func (conf MapConf) GetAliasMapOr(key string, deft map[string]string) (map[string]string, error) {
+	ret, err := conf.GetAliasMap(key)
+	if err != nil {
+		return deft, err
+	}
+	return ret, err
+}
+
+func (conf MapConf) GetAliasMap(key string) (map[string]string, error) {
+	value, exist := conf[key]
+	if !exist || value == "" {
+		return make(map[string]string), ErrConfMissingKey(key, AliasMapType)
+	}
+	v := strings.Split(value, ",")
+	newV := make(map[string]string)
+	for _, i := range v {
+		trimI := strings.TrimSpace(i)
+		if len(trimI) <= 0 {
+			continue
+		}
+		var (
+			name  string
+			alias string
+		)
+		splits := strings.Fields(trimI)
+		switch len(splits) {
+		case 1:
+			name, alias = splits[0], splits[0]
+		case 2:
+			name, alias = splits[0], splits[1]
+		default:
+			return newV, ErrMissConfigAliasMap()
+		}
+		newV[name] = alias
+	}
+	if len(newV) <= 0 {
+		return make(map[string]string), ErrConfKeyType(key, AliasMapType)
+	}
+	return newV, nil
+}
+
+func (conf MapConf) GetPasswordEnvString(key string) (string, error) {
+	value, err := conf.GetString(key)
+	if err != nil {
+		return "", err
+	}
+
+	envName, isEnv := IsEnv(value)
+	if isEnv {
+		valueFromEnv, err := GetEnvValue(envName)
+		if err != nil {
+			return "", err
+		}
+		return valueFromEnv, nil
+	}
+
+	return value, nil
+}
+
+func (conf MapConf) GetPasswordEnvStringOr(key, deft string) (string, error) {
+	value, err := conf.GetString(key)
+	if err != nil {
+		value = deft
+	}
+
+	envName, isEnv := IsEnv(value)
+	if isEnv {
+		valueFromEnv, err := GetEnvValue(envName)
+		if err != nil {
+			return "", err
+		}
+		return valueFromEnv, nil
+	}
+
+	return value, nil
+}
+
+func GetStringList(value string) []string {
+	v := strings.Split(value, ",")
+	var newV []string
+	for _, i := range v {
+		trimI := strings.TrimSpace(i)
+		if len(trimI) > 0 {
+			newV = append(newV, trimI)
+		}
+	}
+	return newV
+}
+
+// parse ${ENV} to ENV
+// get ENV value from os
+func GetEnv(env string) string {
+	env = strings.TrimSpace(env)
+	var envName string
+	envName, isEnv := IsEnv(env)
+	if !isEnv {
+		log.Debug("cannot parse your ak sk as ${YOUR_ENV_NAME} format, use it as raw ak.sk instead")
+		return ""
+	}
+
+	if osEnv := os.Getenv(envName); osEnv != "" {
+		return osEnv
+	}
+	log.Warnf("cannot find %s in current system env", envName)
+	return ""
+}
+
+func GetEnvValue(envName string) (string, error) {
+	envName = strings.TrimSpace(envName)
+	if envName == "" {
+		return "", errors.New("environment name is empty")
+	}
+	if osEnv := os.Getenv(envName); osEnv != "" {
+		return osEnv, nil
+	} else {
+		return "", fmt.Errorf("value of environment %s is empty", envName)
+	}
+}
+
+func IsEnv(env string) (string, bool) {
+	env = strings.TrimSpace(env)
+	if strings.HasPrefix(env, "${") && strings.HasSuffix(env, "}") {
+		envName := strings.Trim(strings.Trim(strings.Trim(env, "$"), "{"), "}")
+		return strings.TrimSpace(envName), true
+	}
+	return "", false
+}
+
+func DeepCopy(value MapConf) MapConf {
+	result := make(MapConf)
+	for key, value := range value {
+		result[key] = value
+	}
+	return result
+}
