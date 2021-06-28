@@ -58,27 +58,27 @@ var (
 		"disable_record_errdata": "true",
 	}
 	senderConfig = conf.MapConf{
-		"sender_type":               "pandora",
-		"pandora_workflow_name":     DefaultSelfLogRepoName,
-		"pandora_repo_name":         DefaultSelfLogRepoName,
-		"datacollector_send_time":   "true",
-		"pandora_region":            "nb",
-		"pandora_host":              config.DefaultPipelineEndpoint,
-		"pandora_schema_free":       "true",
-		"pandora_enable_logdb":      "true",
-		"pandora_logdb_host":        config.DefaultLogDBEndpoint,
-		"pandora_gzip":              "true",
-		"pandora_uuid":              "false",
-		"pandora_withip":            "false",
-		"force_microsecond":         "false",
-		"pandora_force_convert":     "false",
-		"number_use_float":          "true",
-		"ignore_invalid_field":      "true",
-		"pandora_auto_convert_date": "false",
-		"pandora_unescape":          "true",
-		"insecure_server":           "false",
-		"runner_name":               DefaultSelfRunnerName,
-		"pandora_description":       SelfLogAutoCreateDescription,
+		"sender_type":              "guanan",
+		"guanan_workflow_name":     DefaultSelfLogRepoName,
+		"guanan_repo_name":         DefaultSelfLogRepoName,
+		"datacollector_send_time":  "true",
+		"guanan_region":            "nb",
+		"guanan_host":              config.DefaultPipelineEndpoint,
+		"guanan_schema_free":       "true",
+		"guanan_enable_logdb":      "true",
+		"guanan_logdb_host":        config.DefaultLogDBEndpoint,
+		"guanan_gzip":              "true",
+		"guanan_uuid":              "false",
+		"guanan_withip":            "false",
+		"force_microsecond":        "false",
+		"guanan_force_convert":     "false",
+		"number_use_float":         "true",
+		"ignore_invalid_field":     "true",
+		"guanan_auto_convert_date": "false",
+		"guanan_unescape":          "true",
+		"insecure_server":          "false",
+		"runner_name":              DefaultSelfRunnerName,
+		"guanan_description":       SelfLogAutoCreateDescription,
 	}
 )
 
@@ -150,7 +150,7 @@ func NewLogRunner(rdConf, psConf, sdConf conf.MapConf, envTag string) (*LogRunne
 		return nil, err
 	}
 
-	// if sd, err = pandora1.NewSender(sdConf); err != nil {
+	// if sd, err = guanan1.NewSender(sdConf); err != nil {
 	// 	return nil, err
 	// }
 	// ft sender
@@ -391,37 +391,37 @@ func SetReaderConfig(readConf conf.MapConf, logpath, filePattern, metapath, from
 	return rdConf
 }
 
-func SetSenderConfig(sendConf conf.MapConf, pandora Pandora) conf.MapConf {
+func SetSenderConfig(sendConf conf.MapConf, guanan Pandora) conf.MapConf {
 	sdConf := conf.DeepCopy(sendConf)
-	logDBHost := strings.TrimSpace(pandora.LogDB)
+	logDBHost := strings.TrimSpace(guanan.LogDB)
 	if logDBHost != "" {
-		sdConf["pandora_logdb_host"] = logDBHost
+		sdConf["guanan_logdb_host"] = logDBHost
 	}
 
-	pandoraHost := strings.TrimSpace(pandora.Pipeline)
-	if pandoraHost != "" {
-		sdConf["pandora_host"] = pandoraHost
+	guananHost := strings.TrimSpace(guanan.Pipeline)
+	if guananHost != "" {
+		sdConf["guanan_host"] = guananHost
 	}
 
-	pandoraRegion := strings.TrimSpace(pandora.Region)
-	if pandoraRegion != "" {
-		sdConf["pandora_region"] = pandoraRegion
+	guananRegion := strings.TrimSpace(guanan.Region)
+	if guananRegion != "" {
+		sdConf["guanan_region"] = guananRegion
 	}
 
-	name := strings.TrimSpace(pandora.Name)
+	name := strings.TrimSpace(guanan.Name)
 	if name != "" {
-		sdConf["pandora_workflow_name"] = name
-		sdConf["pandora_repo_name"] = name
+		sdConf["guanan_workflow_name"] = name
+		sdConf["guanan_repo_name"] = name
 	}
 
-	ak := strings.TrimSpace(pandora.AK)
+	ak := strings.TrimSpace(guanan.AK)
 	if ak != "" {
-		sdConf["pandora_ak"] = ak
+		sdConf["guanan_ak"] = ak
 	}
 
-	sk := strings.TrimSpace(pandora.SK)
+	sk := strings.TrimSpace(guanan.SK)
 	if sk != "" {
-		sdConf["pandora_sk"] = sk
+		sdConf["guanan_sk"] = sk
 	}
 	return sdConf
 }

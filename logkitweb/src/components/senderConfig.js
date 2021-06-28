@@ -93,15 +93,15 @@ class Sender extends Component {
         })
         getSenderOptionsFormData().then(item => {
           if (item.code === 'L200') {
-            if("pandora" in item.data){
-              item.data["pandora"].forEach(function (val, index, arr) {
+            if("guanan" in item.data){
+              item.data["guanan"].forEach(function (val, index, arr) {
                 if(isMetric === "true"){
-                  if(val.KeyName === "pandora_extra_info") {
-                    item.data["pandora"][index].ChooseOptions = trueDefault
+                  if(val.KeyName === "guanan_extra_info") {
+                    item.data["guanan"][index].ChooseOptions = trueDefault
                   }
                 }else{
-                  if(val.KeyName === "pandora_extra_info") {
-                    item.data["pandora"][index].ChooseOptions = falseDefault
+                  if(val.KeyName === "guanan_extra_info") {
+                    item.data["guanan"][index].ChooseOptions = falseDefault
                   }
                 }
               })
@@ -145,7 +145,7 @@ class Sender extends Component {
       let isAdvanceDependHide = advanceDependValue === 'false' || advanceDependValue === false
       if (ele.ChooseOnly == false) {
         if (ele.KeyName == 'name' && window.isCopy != true) {
-          ele.Default = "pandora.sender." + moment().format("YYYYMMDDHHmmss");
+          ele.Default = "guanan.sender." + moment().format("YYYYMMDDHHmmss");
         }
         formItem = (
           <FormItem key={index}

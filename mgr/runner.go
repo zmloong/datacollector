@@ -694,7 +694,7 @@ func (r *LogExportRunner) rawReadLines(dataSourceTag string, l rate.Limiter, c c
 	var err error
 	for !utils.BatchFullOrTimeout(r.RunnerName, &r.stopped, r.batchLen, r.batchSize, r.lastSend,
 		r.MaxBatchLen, r.MaxBatchSize, r.MaxBatchInterval) {
-		//_ = l.Wait(c)
+		_ = l.Wait(c)
 		line, err = r.reader.ReadLine()
 		if os.IsNotExist(err) {
 			log.Debugf("Runner[%v] reader %s - error: %v, sleep 3 second...", r.Name(), r.reader.Name(), err)

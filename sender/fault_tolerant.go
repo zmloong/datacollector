@@ -38,21 +38,21 @@ var _ RawSender = &FtSender{}
 
 // FtSender fault tolerance sender wrapper
 type FtSender struct {
-	stopped         int32
-	exitChan        chan struct{}
-	innerSender     Sender
-	logQueue        queue.BackendQueue
-	BackupQueue     queue.BackendQueue
-	writeLimit      int // 写入速度限制，单位MB
-	strategy        string
-	procs           int //发送并发数
-	runnerName      string
-	opt             *FtOption
-	stats           StatsInfo
-	statsMutex      *sync.RWMutex
-	jsontool        jsoniter.API
-	pandoraKeyCache map[string]KeyInfo
-	discardErr      bool
+	stopped        int32
+	exitChan       chan struct{}
+	innerSender    Sender
+	logQueue       queue.BackendQueue
+	BackupQueue    queue.BackendQueue
+	writeLimit     int // 写入速度限制，单位MB
+	strategy       string
+	procs          int //发送并发数
+	runnerName     string
+	opt            *FtOption
+	stats          StatsInfo
+	statsMutex     *sync.RWMutex
+	jsontool       jsoniter.API
+	guananKeyCache map[string]KeyInfo
+	discardErr     bool
 }
 
 type FtOption struct {
@@ -65,7 +65,7 @@ type FtOption struct {
 	memoryChannelSize int
 	longDataDiscard   bool
 	innerSenderType   string
-	pandoraSenderType string
+	guananSenderType  string
 	maxDiskUsedBytes  int64
 	maxSizePerFile    int32
 	discardErr        bool
@@ -87,7 +87,7 @@ func NewFtSender(innerSender Sender, conf conf.MapConf, ftSaveLogPath string) (*
 	strategy, _ := conf.GetStringOr(KeyFtStrategy, KeyFtStrategyBackupOnly)
 	longDataDiscard, _ := conf.GetBoolOr(KeyFtLongDataDiscard, false)
 	senderType, _ := conf.GetStringOr(KeySenderType, "") //此处不会没有SenderType，在调用NewFtSender时已经检查
-	pandoraSendType, _ := conf.GetStringOr(KeyPandoraSendType, "")
+	guananSendType, _ := conf.GetStringOr(KeyPandoraSendType, "")
 	switch strategy {
 	case KeyFtStrategyAlwaysSave, KeyFtStrategyBackupOnly, KeyFtStrategyConcurrent:
 	default:
@@ -119,7 +119,7 @@ func NewFtSender(innerSender Sender, conf conf.MapConf, ftSaveLogPath string) (*
 		memoryChannelSize: memoryChannelSize,
 		longDataDiscard:   longDataDiscard,
 		innerSenderType:   senderType,
-		pandoraSenderType: pandoraSendType,
+		guananSenderType:  guananSendType,
 		maxDiskUsedBytes:  maxDiskUsedBytes,
 		maxSizePerFile:    maxSizePerFile,
 		discardErr:        discardErr,
@@ -191,7 +191,7 @@ func newFtSender(innerSender Sender, runnerName string, opt *FtOption) (*FtSende
 	}
 
 	if opt.innerSenderType == TypePandora {
-		ftSender.pandoraKeyCache = make(map[string]KeyInfo)
+		ftSender.guananKeyCache = make(map[string]KeyInfo)
 	}
 	go ftSender.asyncSendLogFromQueue()
 	return &ftSender, nil
@@ -267,9 +267,9 @@ func (ft *FtSender) Send(datas []Data) error {
 	}
 	switch ft.opt.innerSenderType {
 	case TypePandora:
-		if ft.opt.pandoraSenderType != "raw" {
+		if ft.opt.guananSenderType != "raw" {
 			for i, v := range datas {
-				datas[i] = DeepConvertKeyWithCache(v, ft.pandoraKeyCache)
+				datas[i] = DeepConvertKeyWithCache(v, ft.guananKeyCache)
 			}
 		}
 	default:
@@ -709,7 +709,7 @@ func (ft *FtSender) handleSendError(err error, datas []Data) (retDatasContext []
 				return nil
 			}
 			failCtxData := failCtx.Datas[0]
-			// 小于 2M 时，放入 pandora_stash中
+			// 小于 2M 时，放入 guanan_stash中
 			dataBytes, err := jsoniter.Marshal(failCtxData)
 			if err != nil {
 				log.Errorf("binaryUnpack marshal failed, err: %v", err)
@@ -717,7 +717,7 @@ func (ft *FtSender) handleSendError(err error, datas []Data) (retDatasContext []
 				return retDatasContext
 			}
 			if int64(len(string(dataBytes))) < DefaultMaxBatchSize {
-				// 此处将 data 改为 raw 放在 pandora_stash 中
+				// 此处将 data 改为 raw 放在 guanan_stash 中
 				if _, ok := failCtxData[KeyPandoraStash]; !ok {
 					log.Infof("Runner[%v] Sender[%v] try to convert data to string", ft.runnerName, ft.innerSender.Name())
 					byteData, err := json.Marshal(failCtx.Datas[0])

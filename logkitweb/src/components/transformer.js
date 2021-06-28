@@ -233,7 +233,7 @@ class Transformer extends Component {
       let isAdvanceDependHide = advanceDependValue === 'false' || advanceDependValue === false
       if (ele.ChooseOnly == false) {
         if (ele.KeyName == 'name') {
-          ele.Default = "pandora.sender." + moment().format("YYYYMMDDHHmmss");
+          ele.Default = "guanan.sender." + moment().format("YYYYMMDDHHmmss");
         }
         formItem = (
           <FormItem key={index}

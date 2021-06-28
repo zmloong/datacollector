@@ -253,7 +253,7 @@ func NewInvalidArgs(name, message string) *RequestError {
 	return &RequestError{
 		Message:   fmt.Sprintf("Invalid args, argName: %s, reason: %s", name, message),
 		ErrorType: InvalidArgs,
-		Component: "pandora",
+		Component: "guanan",
 	}
 }
 
@@ -279,7 +279,7 @@ func New(message, rawText, reqId string, statusCode int) *RequestError {
 		RequestId:  reqId,
 		RawMessage: rawText,
 		ErrorType:  DefaultRequestError,
-		Component:  "pandora",
+		Component:  "guanan",
 	}
 }
 

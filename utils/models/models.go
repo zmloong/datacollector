@@ -47,9 +47,9 @@ const (
 	TextPlain       = "text/plain"
 	ApplicationGzip = "application/gzip"
 
-	KeyPandoraStash      = "pandora_stash"       // 当只有一条数据且 sendError 时候，将其转化为 raw 发送到 pandora_stash 这个字段
-	KeyPandoraSeparateId = "pandora_separate_id" // 当一条数据大于2M且 sendError 时候，将其切片，切片记录到 pandora_separate_id 这个字段
-	TypeIP               = "ip"                  // schema ip
+	KeyPandoraStash      = "guanan_stash"       // 当只有一条数据且 sendError 时候，将其转化为 raw 发送到 guanan_stash 这个字段
+	KeyPandoraSeparateId = "guanan_separate_id" // 当一条数据大于2M且 sendError 时候，将其切片，切片记录到 guanan_separate_id 这个字段
+	TypeIP               = "ip"                 // schema ip
 
 	SchemaFreeTokensPrefix = "schema_free_tokens_"
 	LogDBTokensPrefix      = "logdb_tokens_"
@@ -169,12 +169,12 @@ type AuthTokens struct {
 }
 
 type Pandora struct {
-	Name     string `json:"pandora_name"`
-	Region   string `json:"pandora_region"`
-	Pipeline string `json:"pandora_pipeline"`
-	LogDB    string `json:"pandora_logdb"`
-	AK       string `json:"pandora_ak"`
-	SK       string `json:"pandora_sk"`
+	Name     string `json:"guanan_name"`
+	Region   string `json:"guanan_region"`
+	Pipeline string `json:"guanan_pipeline"`
+	LogDB    string `json:"guanan_logdb"`
+	AK       string `json:"guanan_ak"`
+	SK       string `json:"guanan_sk"`
 }
 
 type LagInfo struct {

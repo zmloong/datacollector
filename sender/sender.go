@@ -9,7 +9,7 @@ import (
 	. "datacollector/utils/models"
 )
 
-// Sender send data to pandora, prometheus such different destinations
+// Sender send data to guanan, prometheus such different destinations
 type Sender interface {
 	Name() string
 	// send data, error if failed

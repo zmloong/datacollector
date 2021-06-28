@@ -828,7 +828,7 @@ func TrimSecretInfo(conf RunnerConfig, trimSk bool) RunnerConfig {
 	if trimSk {
 		// Pandora sk
 		keyName = append(keyName, []string{
-			"pandora_sk",
+			"guanan_sk",
 		}...)
 	}
 

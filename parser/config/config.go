@@ -56,7 +56,7 @@ const (
 const (
 	KeyRFCType              = "syslog_rfc"
 	KeySyslogMaxline        = "syslog_maxline"
-	PandoraParseFlushSignal = "!@#pandora-EOF-line#@!"
+	PandoraParseFlushSignal = "!@#guanan-EOF-line#@!"
 )
 
 // ModeUsages 和 ModeTooltips 用途说明
@@ -113,7 +113,7 @@ var (
 		DefaultNoUse: false,
 		Description:  "额外的标签信息(labels)",
 		Advance:      true,
-		ToolTip:      `额外的标签信息，同样逗号分隔，如 "app datacollector, user pandora"`,
+		ToolTip:      `额外的标签信息，同样逗号分隔，如 "app datacollector, user guanan"`,
 	}
 
 	OptionKeepRawData = Option{
@@ -137,7 +137,7 @@ var (
 		DefaultNoUse:  false,
 		Description:   "禁止记录解析失败数据(disable_record_errdata)",
 		Advance:       true,
-		ToolTip:       `解析失败的数据会默认出现在"pandora_stash"字段，该选项可以禁止记录解析失败的数据`,
+		ToolTip:       `解析失败的数据会默认出现在"guanan_stash"字段，该选项可以禁止记录解析失败的数据`,
 	}
 
 	OptionParserName = Option{

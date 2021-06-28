@@ -151,7 +151,7 @@ class Parser extends Component {
       let isAdvanceDependHide = advanceDependValue === 'false' || advanceDependValue === false
       if (ele.ChooseOnly == false) {
         if (ele.KeyName == 'name' && window.isCopy != true) {
-          ele.Default = "pandora.parser." + moment().format("YYYYMMDDHHmmss");
+          ele.Default = "guanan.parser." + moment().format("YYYYMMDDHHmmss");
         }
         if (ele.KeyName === 'grok_custom_patterns') {
           formItem = (

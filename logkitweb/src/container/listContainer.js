@@ -194,7 +194,7 @@ class List extends Component {
                 <Tag color="#108ee9"><Icon type="github" style={{ fontSize: 12, color: 'white' }} />datacollector</Tag> </a>
                 <a target="_blank" href="https://github.com/guanan/datacollector/wiki">
                 <Tag color="#108ee9"><Icon type="question-circle-o" style={{ fontSize: 12, color: 'white' }} />帮助文档</Tag> </a>
-                <a target="_blank" href="https://guanan.github.io/pandora-docs/#/"><Tag
+                <a target="_blank" href="https://guanan.github.io/guanan-docs/#/"><Tag
                   color="#108ee9">Pandora产品</Tag>
                 </a>
               </div>
