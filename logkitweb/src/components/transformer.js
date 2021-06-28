@@ -12,7 +12,7 @@ import {
   Tooltip,
   Popconfirm
 } from 'antd';
-import {getTransformOptions, getTransformUsages} from '../services/logkit';
+import {getTransformOptions, getTransformUsages} from '../services/datacollector';
 import config from '../store/config'
 import moment from 'moment'
 import _ from "lodash"

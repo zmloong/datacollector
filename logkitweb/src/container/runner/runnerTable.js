@@ -28,7 +28,7 @@ import {
   getClusterRunnerConfigs,
   getRunnerStatus,
   getClusterRunnerStatus,
-} from '../../services/logkit';
+} from '../../services/datacollector';
 import {runnerStatu} from './constant'
 import config from '../../store/config'
 import * as uuid from 'uuid'
@@ -563,7 +563,7 @@ class RunnerTable extends Component {
         let readerError = ''
         let parseError = ''
         let sendError = ''
-        let logkitError = ''
+        let datacollectorError = ''
         let sendTrend = 'stable'
         let parseTrend = 'stable'
         let readerTrend = 'stable'
@@ -604,7 +604,7 @@ class RunnerTable extends Component {
             parseError = ele.parserStats.last_error
             sendError = _.values(ele.senderStats)[0] == undefined ? '' : _.values(ele.senderStats)[0].last_error
             isWebFolder = item.web_folder
-            logkitError = ele.error
+            datacollectorError = ele.error
             lag = ele.lag
           }
         })
@@ -631,7 +631,7 @@ class RunnerTable extends Component {
           readerError,
           parseError,
           sendError,
-          logkitError,
+          datacollectorError,
           copy: JSON.stringify(item, null, 2),
           currentItem: item,
           iconType,
@@ -724,9 +724,9 @@ class RunnerTable extends Component {
             <Row style={{marginTop: '10px'}}>
               <Col span={24}>{this.state.currentItem.sendError}</Col>
             </Row>
-            <Tag color="#108ee9" style={{marginTop: '30px'}}>Logkit错误日志:</Tag>
+            <Tag color="#108ee9" style={{marginTop: '30px'}}>Datacollector错误日志:</Tag>
             <Row style={{marginTop: '10px'}}>
-              <Col span={24}>{this.state.currentItem.logkitError}</Col>
+              <Col span={24}>{this.state.currentItem.datacollectorError}</Col>
             </Row>
 
           </Modal>

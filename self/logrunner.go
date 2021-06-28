@@ -30,7 +30,7 @@ import (
 
 const (
 	DefaultSendTime        = 3
-	DefaultSelfLogRepoName = "logkit_self_log"
+	DefaultSelfLogRepoName = "datacollector_self_log"
 	DebugPattern           = `^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[DEBUG\]`
 	ValidFilePattern       = "valid_file_pattern"
 )
@@ -49,7 +49,7 @@ var (
 		"read_from":          WhenceNewest,
 		"read_same_inode":    "false",
 		"skip_first_line":    "false",
-		ValidFilePattern:     "logkit.log-*",
+		ValidFilePattern:     "datacollector.log-*",
 		"head_pattern":       `^(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[(WARN)|(INFO)|(ERROR)]|(DEBUG)\])`,
 	}
 	parserConfig = conf.MapConf{
@@ -61,7 +61,7 @@ var (
 		"sender_type":               "pandora",
 		"pandora_workflow_name":     DefaultSelfLogRepoName,
 		"pandora_repo_name":         DefaultSelfLogRepoName,
-		"logkit_send_time":          "true",
+		"datacollector_send_time":   "true",
 		"pandora_region":            "nb",
 		"pandora_host":              config.DefaultPipelineEndpoint,
 		"pandora_schema_free":       "true",
@@ -118,7 +118,7 @@ func NewLogRunner(rdConf, psConf, sdConf conf.MapConf, envTag string) (*LogRunne
 		if err != nil {
 			return nil, fmt.Errorf("get system current workdir error %v", err)
 		}
-		rdConf["log_path"] = filepath.Join(dir, "logkit.log*")
+		rdConf["log_path"] = filepath.Join(dir, "datacollector.log*")
 	} else {
 		path, err := filepath.Abs(logPath)
 		if err != nil {

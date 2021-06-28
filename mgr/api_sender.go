@@ -14,7 +14,7 @@ import (
 const KeySendConfig = "senders"
 const KeyRouterConfig = "router"
 
-// get /logkit/sender/usages 获取sender用途说明
+// get /datacollector/sender/usages 获取sender用途说明
 func (rs *RestService) GetSenderUsages() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sort.Stable(ModeUsages)
@@ -22,14 +22,14 @@ func (rs *RestService) GetSenderUsages() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/sender/options 获取sender配置参数
+// get /datacollector/sender/options 获取sender配置参数
 func (rs *RestService) GetSenderKeyOptions() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return RespSuccess(c, ModeKeyOptions)
 	}
 }
 
-// get /logkit/sender/router/option 获取所有sender router的配置项
+// get /datacollector/sender/router/option 获取所有sender router的配置项
 func (rs *RestService) GetSenderRouterOption() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		routerOption := router.GetRouterOption()
@@ -37,7 +37,7 @@ func (rs *RestService) GetSenderRouterOption() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/sender/router/usage 获取所有sender router匹配方式的名字和作用
+// get /datacollector/sender/router/usage 获取所有sender router匹配方式的名字和作用
 func (rs *RestService) GetSenderRouterUsage() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		routerUsage := router.GetRouterMatchTypeUsage()
@@ -45,7 +45,7 @@ func (rs *RestService) GetSenderRouterUsage() echo.HandlerFunc {
 	}
 }
 
-// POST /logkit/sender/send 请求校验sender配置
+// POST /datacollector/sender/send 请求校验sender配置
 func (rs *RestService) PostSend() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var senderConfig map[string]interface{} // request body params in map format
@@ -62,7 +62,7 @@ func (rs *RestService) PostSend() echo.HandlerFunc {
 	}
 }
 
-// POST /logkit/sender/check 请求校验sender配置
+// POST /datacollector/sender/check 请求校验sender配置
 func (rs *RestService) PostSenderCheck() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var senderConfig map[string]interface{} // request body params in map format

@@ -336,7 +336,7 @@ func NewLogExportRunner(rc RunnerConfig, cleanChan chan<- cleaner.CleanSignal, r
 				senderConfig[senderConf.KeyPandoraExtraInfo] = "false"
 			}
 			if senderConfig[senderConf.KeyPandoraDescription] == "" {
-				senderConfig[senderConf.KeyPandoraDescription] = LogkitAutoCreateDescription
+				senderConfig[senderConf.KeyPandoraDescription] = DatacollectorAutoCreateDescription
 			}
 		}
 		if senderType, ok := senderConfig[senderConf.KeySenderType]; ok && senderType == senderConf.TypeOpenFalconTransfer {
@@ -1385,7 +1385,7 @@ func calcSpeedTrend(old, new StatsInfo, elaspedtime float64) (speed int64, trend
 
 //Compatible 用于新老配置的兼容
 func Compatible(rc RunnerConfig) RunnerConfig {
-	//兼容qiniulog与reader多行的配置
+	//兼容guananlog与reader多行的配置
 	if rc.ParserConf == nil {
 		return rc
 	}
@@ -1398,13 +1398,13 @@ func Compatible(rc RunnerConfig) RunnerConfig {
 	// }
 	// pattern, _ := rc.ReaderConfig.GetStringOr(KeyHeadPattern, "")
 	// if parserType == config.TypeLogv1 && pattern == "" {
-	// 	prefix, _ := rc.ParserConf.GetStringOr(qiniu.KeyPrefix, "")
+	// 	prefix, _ := rc.ParserConf.GetStringOr(guanan.KeyPrefix, "")
 	// 	prefix = strings.TrimSpace(prefix)
 	// 	var readpattern string
 	// 	if len(prefix) > 0 {
-	// 		readpattern = "^" + prefix + " " + qiniu.HeadPatthern
+	// 		readpattern = "^" + prefix + " " + guanan.HeadPatthern
 	// 	} else {
-	// 		readpattern = "^" + qiniu.HeadPatthern
+	// 		readpattern = "^" + guanan.HeadPatthern
 	// 	}
 	// 	rc.ReaderConfig[KeyHeadPattern] = readpattern
 	// }

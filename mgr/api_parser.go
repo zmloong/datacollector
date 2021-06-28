@@ -25,7 +25,7 @@ type PostParseRet struct {
 	SamplePoints []Data `json:"SamplePoints"`
 }
 
-// post /logkit/parser/parse 接受解析请求
+// post /datacollector/parser/parse 接受解析请求
 func (rs *RestService) PostParse() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		parserConfig := conf.MapConf{}
@@ -46,7 +46,7 @@ func (rs *RestService) PostParse() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/parser/usages 获得解析用途说明
+// get /datacollector/parser/usages 获得解析用途说明
 func (rs *RestService) GetParserUsages() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sort.Stable(ModeUsages)
@@ -54,7 +54,7 @@ func (rs *RestService) GetParserUsages() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/parser/tooltips 获取解析用途提示
+// get /datacollector/parser/tooltips 获取解析用途提示
 func (rs *RestService) GetParserTooltips() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sort.Stable(ModeToolTips)
@@ -62,21 +62,21 @@ func (rs *RestService) GetParserTooltips() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/parser/options 获取解析选项
+// get /datacollector/parser/options 获取解析选项
 func (rs *RestService) GetParserKeyOptions() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return RespSuccess(c, ModeKeyOptions)
 	}
 }
 
-// get /logkit/parser/samplelogs 获取样例日志
+// get /datacollector/parser/samplelogs 获取样例日志
 func (rs *RestService) GetParserSampleLogs() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return RespSuccess(c, SampleLogs)
 	}
 }
 
-// POST /logkit/parser/check
+// POST /datacollector/parser/check
 func (rs *RestService) PostParserCheck() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		reqConf := conf.MapConf{}

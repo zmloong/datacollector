@@ -6,7 +6,7 @@ import {
   Checkbox,
 } from 'antd';
 import config from '../store/config'
-import {getMetricKeys} from '../services/logkit';
+import {getMetricKeys} from '../services/datacollector';
 
 const FormItem = Form.Item;
 

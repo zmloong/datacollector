@@ -17,7 +17,7 @@ const (
 // parser 的类型
 const (
 	TypeCSV        = "csv"
-	TypeLogv1      = "qiniulog"
+	TypeLogv1      = "guananlog"
 	TypeKafkaRest  = "kafkarest"
 	TypeRaw        = "raw"
 	TypeEmpty      = "empty"

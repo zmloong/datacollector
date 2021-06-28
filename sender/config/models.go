@@ -48,7 +48,7 @@ const (
 	KeyPandoraKodoRotateSize     = "pandora_kodo_rotate_size"
 	KeyPandoraKodoFileRetention  = "pandora_kodo_file_retention"
 
-	KeyPandoraEmail = "qiniu_email"
+	KeyPandoraEmail = "guanan_email"
 
 	KeyRequestRateLimit       = "request_rate_limit"
 	KeyFlowRateLimit          = "flow_rate_limit"
@@ -73,13 +73,13 @@ const (
 	TimestampPrecision = 19
 
 	// Sender's conf keys
-	KeySenderType        = "sender_type"
-	KeyFaultTolerant     = "fault_tolerant"
-	KeyName              = "name"
-	KeyLogkitSendTime    = "logkit_send_time"
-	KeyIsMetrics         = "is_metrics"
-	KeyMetricTime        = "timestamp"
-	UnderfinedRunnerName = "UnderfinedRunnerName"
+	KeySenderType            = "sender_type"
+	KeyFaultTolerant         = "fault_tolerant"
+	KeyName                  = "name"
+	KeyDatacollectorSendTime = "datacollector_send_time"
+	KeyIsMetrics             = "is_metrics"
+	KeyMetricTime            = "timestamp"
+	UnderfinedRunnerName     = "UnderfinedRunnerName"
 
 	// SenderType 发送类型
 	TypeFile               = "file"          // 本地文件
@@ -105,8 +105,8 @@ const (
 	KeyAuthUsername            = "auth_username"
 	KeyAuthPassword            = "auth_password"
 	KeyEnableGzip              = "enable_gzip"
-	DefaultJJHPipelineEndpoint = "https://jjh-pipeline.qiniuapi.com"
-	DefaultJJHLogDBEndpoint    = "https://jjh-insight.qiniuapi.com"
+	DefaultJJHPipelineEndpoint = "https://jjh-pipeline.guananapi.com"
+	DefaultJJHLogDBEndpoint    = "https://jjh-insight.guananapi.com"
 	NBRegion                   = "nb"
 	JJHRegion                  = "jjh"
 

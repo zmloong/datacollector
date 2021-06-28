@@ -14,7 +14,7 @@ import {
   getSourceParseOptions,
   getSourceParsesamplelogs,
   postParseData
-} from '../services/logkit';
+} from '../services/datacollector';
 
 const Option = Select.Option
 const FormItem = Form.Item;

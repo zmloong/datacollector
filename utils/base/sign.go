@@ -12,9 +12,9 @@ import (
 	"strings"
 )
 
-const qiniuHeaderPrefix = "X-Qiniu-"
+const guananHeaderPrefix = "X-Qiniu-"
 
-var qiniuSubResource = []string{}
+var guananSubResource = []string{}
 
 func Sign(ak, sk string, req *http.Request) error {
 	sign, err := signRequest([]byte(sk), req)
@@ -31,7 +31,7 @@ func Sign(ak, sk string, req *http.Request) error {
 func SignQiniuHeader(header http.Header) (out string) {
 	var keys []string
 	for key, _ := range header {
-		if len(key) > len(qiniuHeaderPrefix) && key[:len(qiniuHeaderPrefix)] == qiniuHeaderPrefix {
+		if len(key) > len(guananHeaderPrefix) && key[:len(guananHeaderPrefix)] == guananHeaderPrefix {
 			keys = append(keys, key)
 		}
 	}
@@ -51,7 +51,7 @@ func SignQiniuHeader(header http.Header) (out string) {
 func SignQiniuResource(url string, query url.Values) (out string) {
 	out += url
 	var keys []string
-	for _, v := range qiniuSubResource {
+	for _, v := range guananSubResource {
 		if query.Get(v) != "" {
 			keys = append(keys, query.Get(v))
 		}

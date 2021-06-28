@@ -27,13 +27,13 @@ func LogDirAndPattern(logpath string) (dir, pattern string, err error) {
 	dir, err = filepath.Abs(filepath.Dir(logpath))
 	if err != nil {
 		if !os.IsNotExist(err) {
-			err = fmt.Errorf("get logkit log dir error %v", err)
+			err = fmt.Errorf("get datacollector log dir error %v", err)
 			return
 		}
 	}
 	if _, err = os.Stat(dir); os.IsNotExist(err) {
 		if err = os.MkdirAll(dir, DefaultDirPerm); err != nil {
-			err = fmt.Errorf("create logkit log dir error %v", err)
+			err = fmt.Errorf("create datacollector log dir error %v", err)
 			return
 		}
 	}

@@ -3,103 +3,103 @@
  */
 import request  from '../utils/request';
 
-window.logkitUrl = ''
+window.datacollectorUrl = ''
 
-/* window.logkitUrl = 'http://localhost:12581' */
+/* window.datacollectorUrl = 'http://localhost:12581' */
 
 export async function getSourceOptions(params) {
-  return request(window.logkitUrl + '/logkit/reader/usages', {
+  return request(window.datacollectorUrl + '/datacollector/reader/usages', {
     method: 'get',
   });
 }
 
 export async function getSourceOptionsFormData(params) {
-  return request(window.logkitUrl + '/logkit/reader/options', {
+  return request(window.datacollectorUrl + '/datacollector/reader/options', {
     method: 'get',
   });
 }
 
 export async function getSourceParseOptionsFormData(params) {
-  return request(window.logkitUrl + '/logkit/parser/options', {
+  return request(window.datacollectorUrl + '/datacollector/parser/options', {
     method: 'get',
   });
 }
 
 export async function getSourceParseOptions(params) {
-  return request(window.logkitUrl + '/logkit/parser/usages', {
+  return request(window.datacollectorUrl + '/datacollector/parser/usages', {
     method: 'get',
   });
 }
 
 export async function getSourceParsesamplelogs(params) {
-  return request(window.logkitUrl + '/logkit/parser/samplelogs', {
+  return request(window.datacollectorUrl + '/datacollector/parser/samplelogs', {
     method: 'get',
   });
 }
 
 export async function getSenderOptionsFormData(params) {
-  return request(window.logkitUrl + '/logkit/sender/options', {
+  return request(window.datacollectorUrl + '/datacollector/sender/options', {
     method: 'get',
   });
 }
 
 export async function getSenderOptions(params) {
-  return request(window.logkitUrl + '/logkit/sender/usages', {
+  return request(window.datacollectorUrl + '/datacollector/sender/usages', {
     method: 'get',
   });
 }
 
 export async function getMetricKeys(params) {
-  return request(window.logkitUrl + '/logkit/metric/keys', {
+  return request(window.datacollectorUrl + '/datacollector/metric/keys', {
     method: 'get',
   });
 }
 
 export async function getMetricUsages(params) {
-  return request(window.logkitUrl + '/logkit/metric/usages', {
+  return request(window.datacollectorUrl + '/datacollector/metric/usages', {
     method: 'get',
   });
 }
 
 export async function getMetricOptions(params) {
-  return request(window.logkitUrl + '/logkit/metric/options', {
+  return request(window.datacollectorUrl + '/datacollector/metric/options', {
     method: 'get',
   });
 }
 
 export async function getRunnerConfigs(params) {
-  return request(window.logkitUrl + '/logkit/configs', {
+  return request(window.datacollectorUrl + '/datacollector/configs', {
     method: 'get',
   });
 }
 
 export async function getTransformOptions(params) {
-  return request(window.logkitUrl + '/logkit/transformer/options', {
+  return request(window.datacollectorUrl + '/datacollector/transformer/options', {
     method: 'get',
   });
 }
 
 export async function getTransformConfigs(params) {
-  return request(window.logkitUrl + '/logkit/transformer/sampleconfigs', {
+  return request(window.datacollectorUrl + '/datacollector/transformer/sampleconfigs', {
     method: 'get',
   });
 }
 
 export async function getTransformUsages(params) {
-  return request(window.logkitUrl + '/logkit/transformer/usages', {
+  return request(window.datacollectorUrl + '/datacollector/transformer/usages', {
     method: 'get',
   });
 }
 
 
 export async function getRunnerStatus(params) {
-  return request(window.logkitUrl + '/logkit/status', {
+  return request(window.datacollectorUrl + '/datacollector/status', {
     method: 'get',
   });
 }
 
 export async function postParseData(params) {
-  return request(window.logkitUrl + '/logkit/parser/parse', {
+  return request(window.datacollectorUrl + '/datacollector/parser/parse', {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -109,7 +109,7 @@ export async function postParseData(params) {
 }
 
 export async function postConfigData(params) {
-  return request(window.logkitUrl + '/logkit/configs/' + params.name, {
+  return request(window.datacollectorUrl + '/datacollector/configs/' + params.name, {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -119,7 +119,7 @@ export async function postConfigData(params) {
 }
 
 export async function putConfigData(params) {
-  return request(window.logkitUrl + '/logkit/configs/' + params.name, {
+  return request(window.datacollectorUrl + '/datacollector/configs/' + params.name, {
     method: 'put',
     headers: {
       'Content-Type': 'application/json'
@@ -129,19 +129,19 @@ export async function putConfigData(params) {
 }
 
 export async function deleteConfigData(params) {
-  return request(window.logkitUrl + '/logkit/configs/' + params.name, {
+  return request(window.datacollectorUrl + '/datacollector/configs/' + params.name, {
     method: 'delete'
   });
 }
 
 export async function getRunnerVersion(params) {
-  return request(window.logkitUrl + '/logkit/version', {
+  return request(window.datacollectorUrl + '/datacollector/version', {
     method: 'get',
   });
 }
 
 export async function startRunner(params) {
-  return request(window.logkitUrl + '/logkit/configs/' + params.name + '/start', {
+  return request(window.datacollectorUrl + '/datacollector/configs/' + params.name + '/start', {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -150,7 +150,7 @@ export async function startRunner(params) {
 }
 
 export async function stopRunner(params) {
-  return request(window.logkitUrl + '/logkit/configs/' + params.name + '/stop', {
+  return request(window.datacollectorUrl + '/datacollector/configs/' + params.name + '/stop', {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -159,7 +159,7 @@ export async function stopRunner(params) {
 }
 
 export async function resetConfigData(params) {
-  return request(window.logkitUrl + '/logkit/configs/' + params.name + '/reset', {
+  return request(window.datacollectorUrl + '/datacollector/configs/' + params.name + '/reset', {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -171,7 +171,7 @@ export async function resetConfigData(params) {
 
  */
 export async function postClusterConfigData(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -181,7 +181,7 @@ export async function postClusterConfigData(params) {
 }
 
 export async function putClusterConfigData(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
     method: 'put',
     headers: {
       'Content-Type': 'application/json'
@@ -191,25 +191,25 @@ export async function putClusterConfigData(params) {
 }
 
 export async function getClusterRunnerConfigs(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs?tag=' + params.tag + '&url=' + params.machineUrl, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs?tag=' + params.tag + '&url=' + params.machineUrl, {
     method: 'get',
   });
 }
 
 export async function getClusterRunnerStatus(params) {
-  return request(window.logkitUrl + '/logkit/cluster/status?tag=' + params.tag + '&url=' + params.machineUrl, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/status?tag=' + params.tag + '&url=' + params.machineUrl, {
     method: 'get',
   });
 }
 
 export async function getClusterSlaves(params) {
-  return request(window.logkitUrl + '/logkit/cluster/slaves', {
+  return request(window.datacollectorUrl + '/datacollector/cluster/slaves', {
     method: 'get',
   });
 }
 
 export async function postClusterSlaveTag(params) {
-  return request(window.logkitUrl + '/logkit/cluster/slaves/tag?tag=' + params.name + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/slaves/tag?tag=' + params.name + '&url=' + params.url, {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -219,26 +219,26 @@ export async function postClusterSlaveTag(params) {
 }
 
 export async function deleteClusterSlaveTag(params) {
-  return request(window.logkitUrl + '/logkit/cluster/slaves?tag=' + params.name + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/slaves?tag=' + params.name + '&url=' + params.url, {
     method: 'delete'
   });
 }
 
 export async function postClusterStopSlaveTag(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '/stop?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '/stop?tag=' + params.tag + '&url=' + params.url, {
     method: 'post'
   });
 }
 
 export async function postClusterResetSlaveTag(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '/reset?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '/reset?tag=' + params.tag + '&url=' + params.url, {
     method: 'post'
   });
 }
 
 
 export async function startClusterRunner(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '/start?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '/start?tag=' + params.tag + '&url=' + params.url, {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -247,13 +247,13 @@ export async function startClusterRunner(params) {
 }
 
 export async function postClusterDeleteSlaveTag(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
     method: 'delete'
   });
 }
 
 export async function stopClusterRunner(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '/stop?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '/stop?tag=' + params.tag + '&url=' + params.url, {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -262,7 +262,7 @@ export async function stopClusterRunner(params) {
 }
 
 export async function resetClusterConfigData(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '/reset?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '/reset?tag=' + params.tag + '&url=' + params.url, {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
@@ -271,25 +271,25 @@ export async function resetClusterConfigData(params) {
 }
 
 export async function deleteClusterConfigData(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
     method: 'delete'
   });
 }
 
 export async function getClusterConfigData(params) {
-  return request(window.logkitUrl + '/logkit/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/configs/' + params.name + '?tag=' + params.tag + '&url=' + params.url, {
     method: 'get'
   });
 }
 
 export async function getIsCluster(params) {
-  return request(window.logkitUrl + '/logkit/cluster/ismaster', {
+  return request(window.datacollectorUrl + '/datacollector/cluster/ismaster', {
     method: 'get'
   });
 }
 
 export async function getRunnersByTagOrMachineUrl(params) {
-  return request(window.logkitUrl + '/logkit/cluster/runners?tag=' + params.tag + '&url=' + params.url, {
+  return request(window.datacollectorUrl + '/datacollector/cluster/runners?tag=' + params.tag + '&url=' + params.url, {
     method: 'get'
   });
 }

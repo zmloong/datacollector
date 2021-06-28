@@ -148,7 +148,7 @@ func main() {
 		if conf.CleanSelfPattern == "" && logpattern != "" {
 			conf.CleanSelfPattern = logpattern + "-*"
 		}
-		go loopCleanLogkitLog(conf.CleanSelfDir, conf.CleanSelfPattern, conf.CleanSelfLogCnt, conf.CleanSelfDuration, stopClean)
+		go loopCleanDatacollectorLog(conf.CleanSelfDir, conf.CleanSelfPattern, conf.CleanSelfLogCnt, conf.CleanSelfDuration, stopClean)
 	}
 	if len(conf.BindHost) > 0 {
 		m.BindHost = conf.BindHost
@@ -217,7 +217,7 @@ func (f MatchFiles) Len() int           { return len(f) }
 func (f MatchFiles) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
 func (f MatchFiles) Less(i, j int) bool { return f[i].ModTime.Before(f[j].ModTime) }
 
-func cleanLogkitLog(dir, pattern string, reserveCnt int) {
+func cleanDatacollectorLog(dir, pattern string, reserveCnt int) {
 	var err error
 	path := filepath.Join(dir, pattern)
 	matches, err := filepath.Glob(path)
@@ -250,7 +250,7 @@ func cleanLogkitLog(dir, pattern string, reserveCnt int) {
 	}
 	return
 }
-func loopCleanLogkitLog(dir, pattern string, reserveCnt int, duration string, exitchan chan struct{}) {
+func loopCleanDatacollectorLog(dir, pattern string, reserveCnt int, duration string, exitchan chan struct{}) {
 	if len(dir) <= 0 {
 		dir = defaultLogDir
 	}
@@ -280,7 +280,7 @@ func loopCleanLogkitLog(dir, pattern string, reserveCnt int, duration string, ex
 		case <-exitchan:
 			return
 		case <-ticker.C:
-			cleanLogkitLog(dir, pattern, reserveCnt)
+			cleanDatacollectorLog(dir, pattern, reserveCnt)
 		}
 	}
 }

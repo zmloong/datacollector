@@ -26,7 +26,7 @@ var DEFAULT_PORT = 3000
 
 const (
 	StatsShell = "stats"
-	PREFIX     = "/logkit"
+	PREFIX     = "/datacollector"
 )
 
 type RestService struct {
@@ -143,7 +143,7 @@ func NewRestService(mgr *Manager, router *echo.Echo) *RestService {
 		httpschema = "http://"
 	)
 	if mgr.DisableWeb {
-		log.Warn("logkit web service was disabled")
+		log.Warn("datacollector web service was disabled")
 		return rs
 	}
 	for {
@@ -241,7 +241,7 @@ func RespSuccess(c echo.Context, data interface{}) error {
 	return c.JSON(http.StatusOK, respData)
 }
 
-// get /logkit/status
+// get /datacollector/status
 func (rs *RestService) Status() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		rss := rs.mgr.Status()
@@ -256,14 +256,14 @@ func (rs *RestService) Status() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/errors
+// get /datacollector/errors
 func (rs *RestService) GetErrors() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return RespSuccess(c, rs.mgr.Errors())
 	}
 }
 
-// get /logkit/errors/<name>
+// get /datacollector/errors/<name>
 func (rs *RestService) GetError() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var name string
@@ -280,7 +280,7 @@ func (rs *RestService) GetError() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/runners
+// get /datacollector/runners
 func (rs *RestService) GetRunners() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		runnerNameList := make([]string, 0)
@@ -293,7 +293,7 @@ func (rs *RestService) GetRunners() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/configs
+// get /datacollector/configs
 func (rs *RestService) GetConfigs() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		rss := rs.mgr.Configs()
@@ -304,7 +304,7 @@ func (rs *RestService) GetConfigs() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/configs/:name
+// get /datacollector/configs/:name
 func (rs *RestService) GetConfig() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		_, runnerConfig, _, err := rs.checkNameAndConfig(c)
@@ -341,7 +341,7 @@ func (rs *RestService) checkNameAndConfig(c echo.Context) (name string, conf Run
 	return
 }
 
-// post /logkit/configs/<name>
+// post /datacollector/configs/<name>
 func (rs *RestService) PostConfig() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var name string
@@ -362,7 +362,7 @@ func (rs *RestService) PostConfig() echo.HandlerFunc {
 	}
 }
 
-// put /logkit/configs/<name>
+// put /datacollector/configs/<name>
 func (rs *RestService) PutConfig() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var name string
@@ -383,7 +383,7 @@ func (rs *RestService) PutConfig() echo.HandlerFunc {
 	}
 }
 
-// POST /logkit/configs/<name>/reset
+// POST /datacollector/configs/<name>/reset
 func (rs *RestService) PostConfigReset() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var name string
@@ -398,7 +398,7 @@ func (rs *RestService) PostConfigReset() echo.HandlerFunc {
 	}
 }
 
-// POST /logkit/configs/<name>/start
+// POST /datacollector/configs/<name>/start
 func (rs *RestService) PostConfigStart() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var name string
@@ -413,7 +413,7 @@ func (rs *RestService) PostConfigStart() echo.HandlerFunc {
 	}
 }
 
-// POST /logkit/configs/<name>/stop
+// POST /datacollector/configs/<name>/stop
 func (rs *RestService) PostConfigStop() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var name string
@@ -428,7 +428,7 @@ func (rs *RestService) PostConfigStop() echo.HandlerFunc {
 	}
 }
 
-// Delete /logkit/configs/<name>
+// Delete /datacollector/configs/<name>
 func (rs *RestService) DeleteConfig() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var name string
@@ -443,7 +443,7 @@ func (rs *RestService) DeleteConfig() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/errorcode
+// get /datacollector/errorcode
 func (rs *RestService) GetErrorCodeHumanize() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return RespSuccess(c, ErrorCodeHumanize)

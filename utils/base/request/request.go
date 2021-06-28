@@ -59,8 +59,8 @@ func New(cfg *config.Config, client *http.Client, op *Operation, token string, e
 		endpoint = cfg.LogdbEndpoint
 	case config.TypeTSDB:
 		endpoint = cfg.TsdbEndpoint
-	case config.TypeLogkit:
-		endpoint = cfg.LogkitEndpoint
+	case config.TypeDatacollector:
+		endpoint = cfg.DatacollectorEndpoint
 	default:
 		endpoint = cfg.Endpoint
 	}

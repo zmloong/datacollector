@@ -1,2 +1,2 @@
 #!/bin/bash
-curl 127.0.0.1:3000/logkit/status
+curl 127.0.0.1:3000/datacollector/status

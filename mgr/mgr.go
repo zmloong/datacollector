@@ -357,7 +357,7 @@ func (m *Manager) ForkRunner(confPath string, config RunnerConfig, returnOnErr b
 			if config.SendersConfig[k] == nil {
 				return fmt.Errorf("%s sender config is invalid", confPath)
 			}
-			config.SendersConfig[k][senderConf.InnerUserAgent] = "logkit/" + m.Version + " " + m.SystemInfo + " " + webornot
+			config.SendersConfig[k][senderConf.InnerUserAgent] = "datacollector/" + m.Version + " " + m.SystemInfo + " " + webornot
 		}
 
 		if runner, err = NewCustomRunner(config, m.cleanChan, m.rregistry, m.pregistry, m.sregistry); err != nil {

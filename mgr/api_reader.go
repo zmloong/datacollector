@@ -12,7 +12,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-// get /logkit/reader/usages 获取Reader用途
+// get /datacollector/reader/usages 获取Reader用途
 func (rs *RestService) GetReaderUsages() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sort.Stable(ModeUsages)
@@ -20,7 +20,7 @@ func (rs *RestService) GetReaderUsages() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/reader/tooltips 获取Reader用途提示
+// get /datacollector/reader/tooltips 获取Reader用途提示
 func (rs *RestService) GetReaderTooltips() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sort.Stable(ModeToolTips)
@@ -28,14 +28,14 @@ func (rs *RestService) GetReaderTooltips() echo.HandlerFunc {
 	}
 }
 
-// get /logkit/reader/options 获取Reader参数配置
+// get /datacollector/reader/options 获取Reader参数配置
 func (rs *RestService) GetReaderKeyOptions() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return RespSuccess(c, ModeKeyOptions)
 	}
 }
 
-// POST /logkit/reader/read 请求校验reader配置
+// POST /datacollector/reader/read 请求校验reader配置
 func (rs *RestService) PostRead() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var readerConf conf.MapConf // request body params in map format
@@ -51,7 +51,7 @@ func (rs *RestService) PostRead() echo.HandlerFunc {
 	}
 }
 
-// POST /logkit/reader/check 请求校验reader配置
+// POST /datacollector/reader/check 请求校验reader配置
 func (rs *RestService) PostReaderCheck() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var readerConf conf.MapConf // request body params in map format

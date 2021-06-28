@@ -21,33 +21,33 @@ type Config struct {
 	HeaderUserAgent string
 
 	// 以下是新版本，上面的 Endpoint 是老版本，都兼容，默认使用新版，新版为空则用老的 Endpoint
-	LogdbEndpoint    string
-	TsdbEndpoint     string
-	PipelineEndpoint string
-	ReportEndpoint   string
-	LogkitEndpoint   string
-	ConfigType       string
+	LogdbEndpoint         string
+	TsdbEndpoint          string
+	PipelineEndpoint      string
+	ReportEndpoint        string
+	DatacollectorEndpoint string
+	ConfigType            string
 
 	AllowInsecureServer bool
 }
 
 const (
-	TypeLOGDB    = "logdb"
-	TypePipeline = "pipeline"
-	TypeTSDB     = "tsdb"
-	TypeReport   = "report"
-	TypeLogkit   = "logkit"
+	TypeLOGDB         = "logdb"
+	TypePipeline      = "pipeline"
+	TypeTSDB          = "tsdb"
+	TypeReport        = "report"
+	TypeDatacollector = "datacollector"
 )
 
 const (
 	defaultDialTimeout     = 10 * time.Second
 	defaultResponseTimeout = 30 * time.Second
 
-	DefaultTSDBEndpoint     = "https://nb-tsdb.qiniuapi.com"
-	DefaultLogDBEndpoint    = "https://nb-insight.qiniuapi.com"
-	DefaultPipelineEndpoint = "https://nb-pipeline.qiniuapi.com"
-	DefaultReportEndpoint   = "https://report.qiniu.com"
-	DefaultLogkitEndpoint   = "https://logkit-pro.qiniu.com"
+	DefaultTSDBEndpoint          = "https://nb-tsdb.guananapi.com"
+	DefaultLogDBEndpoint         = "https://nb-insight.guananapi.com"
+	DefaultPipelineEndpoint      = "https://nb-pipeline.guananapi.com"
+	DefaultReportEndpoint        = "https://report.guanan.com"
+	DefaultDatacollectorEndpoint = "https://datacollector-pro.guanan.com"
 )
 
 func NewConfig() *Config {
@@ -71,12 +71,12 @@ func (c *Config) Clone() *Config {
 		HeaderUserAgent:  c.HeaderUserAgent,
 
 		// 以下是新版本，上面的 Endpoint 是老版本，都兼容，默认使用新版，新版为空则用老的 Endpoint
-		LogdbEndpoint:    c.LogdbEndpoint,
-		TsdbEndpoint:     c.TsdbEndpoint,
-		PipelineEndpoint: c.PipelineEndpoint,
-		ReportEndpoint:   c.ReportEndpoint,
-		LogkitEndpoint:   c.LogkitEndpoint,
-		ConfigType:       c.ConfigType,
+		LogdbEndpoint:         c.LogdbEndpoint,
+		TsdbEndpoint:          c.TsdbEndpoint,
+		PipelineEndpoint:      c.PipelineEndpoint,
+		ReportEndpoint:        c.ReportEndpoint,
+		DatacollectorEndpoint: c.DatacollectorEndpoint,
+		ConfigType:            c.ConfigType,
 
 		AllowInsecureServer: false,
 	}
@@ -112,8 +112,8 @@ func (c *Config) WithReportEndpoint(endpoint string) *Config {
 	return c
 }
 
-func (c *Config) WithLogkitEndpoint(endpoint string) *Config {
-	c.LogkitEndpoint = endpoint
+func (c *Config) WithDatacollectorEndpoint(endpoint string) *Config {
+	c.DatacollectorEndpoint = endpoint
 	return c
 }
 

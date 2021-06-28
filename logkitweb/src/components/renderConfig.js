@@ -13,7 +13,7 @@ import config from '../store/config'
 import moment from 'moment'
 import {
   getClusterSlaves,
-} from '../services/logkit';
+} from '../services/datacollector';
 import _ from "lodash";
 const Option = Select.Option
 const FormItem = Form.Item;
@@ -66,7 +66,7 @@ class renderConfig extends Component {
 
   renderConfigFile = () => {
     const {getFieldDecorator, resetFields} = this.props.form;
-    let name = "logkit.runner." + moment().format("YYYYMMDDHHmmss");
+    let name = "datacollector.runner." + moment().format("YYYYMMDDHHmmss");
     let data = {
       name,
       ...config.getNodeData()
@@ -222,7 +222,7 @@ class renderConfig extends Component {
     const {isMetric} = this.props
     return (
         <div >
-          <div className='logkit-body'>
+          <div className='datacollector-body'>
             <Row>
               <Form>
               <FormItem {...formItemLayout} label="名称">

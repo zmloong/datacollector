@@ -5,7 +5,7 @@ import {
   Select,
   Checkbox
 } from 'antd';
-import {getSenderOptionsFormData, getSenderOptions} from '../services/logkit';
+import {getSenderOptionsFormData, getSenderOptions} from '../services/datacollector';
 import config from '../store/config'
 import moment from 'moment'
 import _ from "lodash";

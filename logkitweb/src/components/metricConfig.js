@@ -5,7 +5,7 @@ import {
   Select,
 } from 'antd';
 import config from '../store/config'
-import {getMetricOptions} from '../services/logkit';
+import {getMetricOptions} from '../services/datacollector';
 
 const Option = Select.Option;
 const FormItem = Form.Item;

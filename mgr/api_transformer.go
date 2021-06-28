@@ -9,21 +9,21 @@ import (
 	. "datacollector/utils/models"
 )
 
-// GET /logkit/transformer/usages
+// GET /datacollector/transformer/usages
 func (rs *RestService) GetTransformerUsages() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return RespSuccess(c, transforms.GetTransformerUsages())
 	}
 }
 
-//GET /logkit/transformer/options
+//GET /datacollector/transformer/options
 func (rs *RestService) GetTransformerOptions() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return RespSuccess(c, transforms.GetTransformerOptions())
 	}
 }
 
-//GET /logkit/transformer/sampleconfigs
+//GET /datacollector/transformer/sampleconfigs
 func (rs *RestService) GetTransformerSampleConfigs() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		SampleConfigs := make(map[string]string)
@@ -35,7 +35,7 @@ func (rs *RestService) GetTransformerSampleConfigs() echo.HandlerFunc {
 	}
 }
 
-// POST /logkit/transformer/transform
+// POST /datacollector/transformer/transform
 // Transform (multiple logs/single log) in (json array/json object) format with registered transformers
 // Return result string in json array format
 func (rs *RestService) PostTransform() echo.HandlerFunc {
@@ -56,7 +56,7 @@ func (rs *RestService) PostTransform() echo.HandlerFunc {
 	}
 }
 
-// POST /logkit/transformer/check
+// POST /datacollector/transformer/check
 func (rs *RestService) PostTransformerCheck() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var transformerConfig map[string]interface{} // request body params in map format

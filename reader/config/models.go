@@ -209,7 +209,7 @@ const (
 	KeyHTTPServicePath    = "http_service_path"
 
 	DefaultHTTPServiceAddress = ":4000"
-	DefaultHTTPServicePath    = "/logkit/data"
+	DefaultHTTPServicePath    = "/datacollector/data"
 )
 
 // Constants for Redis
