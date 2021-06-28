@@ -47,21 +47,25 @@ const (
 	TextPlain       = "text/plain"
 	ApplicationGzip = "application/gzip"
 
-	KeyPandoraStash      = "guanan_stash"       // 当只有一条数据且 sendError 时候，将其转化为 raw 发送到 guanan_stash 这个字段
-	KeyPandoraSeparateId = "guanan_separate_id" // 当一条数据大于2M且 sendError 时候，将其切片，切片记录到 guanan_separate_id 这个字段
-	TypeIP               = "ip"                 // schema ip
+	KeyPandoraStash      = "pandora_stash"       // 当只有一条数据且 sendError 时候，将其转化为 raw 发送到 pandora_stash 这个字段
+	KeyPandoraSeparateId = "pandora_separate_id" // 当一条数据大于2M且 sendError 时候，将其切片，切片记录到 pandora_separate_id 这个字段
+	TypeIP               = "ip"                  // schema ip
 
 	SchemaFreeTokensPrefix = "schema_free_tokens_"
 	LogDBTokensPrefix      = "logdb_tokens_"
 	TsDBTokensPrefix       = "tsdb_tokens_"
 	KodoTokensPrefix       = "kodo_tokens_"
 
-	KeyRunnerName = "runner_name"
+	KeyRunnerName       = "runner_name"
+	KeyRunnerMaxLineLen = "runner_max_line_Len"
+	KeyRunnerIsBlock    = "is_block"
 
 	DefaultDirPerm  = 0755
 	DefaultFilePerm = 0600
 
 	DefaultMaxBatchSize = 2 * MB
+
+	DefaultSplitSize = 128 * KB // 默认分割为 64 kb
 
 	DefaultSendIntervalSeconds = 60
 
@@ -83,17 +87,19 @@ const (
 	DROP   = "drop"
 
 	DefaultSelfRunnerName = DefaultInternalPrefix + "CollectLogRunner"
-	DefaultInternalPrefix = "DatacollectorInternal"
-	ConfName              = "/etc/logagent/datacollector.conf"
+	DefaultInternalPrefix = "LogkitInternal"
+	ConfName              = "/etc/guanan/datacollector.conf"
 	ConfLocalName         = "/../conf/datacollector.conf"
+
+	ErrNoSuchFileOrDirectory = "no such file or directory"
 )
 
 var (
-	MaxProcs                           = 1
-	NumCPU                             = runtime.NumCPU()
-	DatacollectorAutoCreateDescription = "由datacollector日志收集自动创建"
-	MetricAutoCreateDescription        = "由datacollector监控收集自动创建"
-	SelfLogAutoCreateDescription       = "由datacollector收集自身日志创建"
+	MaxProcs                     = 1
+	NumCPU                       = runtime.NumCPU()
+	LogkitAutoCreateDescription  = "由logkit日志收集自动创建"
+	MetricAutoCreateDescription  = "由logkit监控收集自动创建"
+	SelfLogAutoCreateDescription = "由logkit收集自身日志创建"
 
 	// matches named captures that contain a modifier.
 	//   ie,
@@ -169,12 +175,12 @@ type AuthTokens struct {
 }
 
 type Pandora struct {
-	Name     string `json:"guanan_name"`
-	Region   string `json:"guanan_region"`
-	Pipeline string `json:"guanan_pipeline"`
-	LogDB    string `json:"guanan_logdb"`
-	AK       string `json:"guanan_ak"`
-	SK       string `json:"guanan_sk"`
+	Name     string `json:"pandora_name"`
+	Region   string `json:"pandora_region"`
+	Pipeline string `json:"pandora_pipeline"`
+	LogDB    string `json:"pandora_logdb"`
+	AK       string `json:"pandora_ak"`
+	SK       string `json:"pandora_sk"`
 }
 
 type LagInfo struct {

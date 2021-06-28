@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
+	github.com/bmatcuk/doublestar v1.3.4
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/json-iterator/go v1.1.11
 	github.com/kr/text v0.2.0 // indirect

@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -77,6 +78,7 @@ type diskQueue struct {
 	emptyChan         chan struct{}
 	emptyResponseChan chan error
 	exitChan          chan struct{}
+	stopped           int32
 	exitSyncChan      chan struct{}
 }
 
@@ -138,7 +140,7 @@ func NewDiskQueue(opts NewDiskQueueOptions) BackendQueue {
 	// no need to lock here, nothing else could possibly be touching this instance
 	err := d.retrieveMetaData()
 	if err != nil {
-		log.Warnf("ERROR: diskqueue(%s) failed to retrieveMetaData - %s", d.name, err)
+		log.Warnf("ERROR: diskqueue(%s) failed to retrieveMetaData - %s", d.name, err.Error())
 	}
 
 	go d.ioLoop()
@@ -205,6 +207,8 @@ func (d *diskQueue) exit(deleted bool) error {
 		log.Debugf("DISKQUEUE(%s): closing", d.name)
 	}
 
+	atomic.AddInt32(&d.stopped, 1)
+
 	close(d.exitChan)
 	// ensure that ioLoop has exited
 	<-d.exitSyncChan
@@ -243,7 +247,7 @@ func (d *diskQueue) deleteAllFiles() error {
 
 	innerErr := os.Remove(d.metaDataFileName())
 	if innerErr != nil && !os.IsNotExist(innerErr) {
-		log.Warnf("ERROR: diskqueue(%s) failed to remove metadata file - %s", d.name, innerErr)
+		log.Warnf("ERROR: diskqueue(%s) failed to remove metadata file - %s", d.name, innerErr.Error())
 		return innerErr
 	}
 
@@ -278,7 +282,7 @@ func (d *diskQueue) skipToNextRWFile() error {
 		fn := d.fileName(i)
 		innerErr := os.Remove(fn)
 		if innerErr != nil && !os.IsNotExist(innerErr) {
-			log.Warnf("ERROR: diskqueue(%s) failed to remove data file - %s", d.name, innerErr)
+			log.Warnf("ERROR: diskqueue(%s) failed to remove data file - %s", d.name, innerErr.Error())
 			err = innerErr
 		}
 	}
@@ -310,7 +314,6 @@ func (d *diskQueue) readOne() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		log.Warnf("DISKQUEUE(%s): readOne() opened %s", d.name, curFileName)
 
 		if d.readPos > 0 {
@@ -416,7 +419,7 @@ func (d *diskQueue) writeOne(data []byte) error {
 	writer := rateio.NewRateWriter(d.writeFile, d.writeRateLimit)
 	_, err = io.Copy(writer, mr)
 	if err != nil {
-		log.Warn("io.Copy error -", err)
+		log.Warnf("io.Copy error - %s", err.Error())
 		writer.Close()
 		d.writeFile.Close()
 		d.writeFile = nil
@@ -439,7 +442,7 @@ func (d *diskQueue) writeOne(data []byte) error {
 		// sync every time we start writing to a new file
 		err = d.sync()
 		if err != nil {
-			log.Warnf("ERROR: diskqueue(%s) failed to sync - %s", d.name, err)
+			log.Warnf("ERROR: diskqueue(%s) failed to sync - %s", d.name, err.Error())
 		}
 
 		// 关闭被滚动文件
@@ -472,7 +475,7 @@ func (d *diskQueue) saveToDisk() {
 			err := d.writeOne(msg)
 			if err != nil {
 				// FIXME: 需要一个合适的方案防止数据丢失
-				log.Errorf("DISKQUEUE(%s): drop one msg from memory chan - %v", d.name, err)
+				log.Errorf("DISKQUEUE(%s): drop one msg from memory chan - %s", d.name, err.Error())
 			}
 		default:
 			return
@@ -555,6 +558,12 @@ func (d *diskQueue) persistMetaData() error {
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		if err := os.RemoveAll(tmpFileName); err != nil {
+			log.Errorf("DISKQUEUE(%s): remove temp file %s failed, error: %v", d.name, tmpFileName, err)
+		}
+	}()
 
 	_, err = fmt.Fprintf(f, "%d\n%d,%d\n%d,%d\n",
 		atomic.LoadInt64(&d.depth),
@@ -640,14 +649,14 @@ func (d *diskQueue) moveForward() {
 		if utils.IsExist(fpath) {
 			fi, err := os.Stat(fpath)
 			if err != nil {
-				log.Warnf("ERROR: failed to stat file %q: %s", fpath, err)
+				log.Warnf("ERROR: failed to stat file %q: %s", fpath, err.Error())
 			} else {
 				atomic.AddInt64(&d.currentDiskUsedBytes, -fi.Size())
 			}
 
 			err = os.Remove(fpath)
 			if err != nil {
-				log.Warnf("ERROR: failed to remove file %q: %s", fpath, err)
+				log.Warnf("ERROR: failed to remove file %q: %s", fpath, err.Error())
 			}
 		}
 	}
@@ -655,7 +664,7 @@ func (d *diskQueue) moveForward() {
 	d.checkTailCorruption(depth)
 }
 
-func (d *diskQueue) handleReadError() {
+func (d *diskQueue) handleReadError(failRead int) {
 	// jump to the next read file and rename the current (bad) file
 	if d.readFileNum == d.writeFileNum {
 		// if you can't properly read from the current write file it's safe to
@@ -671,18 +680,23 @@ func (d *diskQueue) handleReadError() {
 	badFn := d.fileName(d.readFileNum)
 	badRenameFn := badFn + ".bad"
 
-	log.Warnf(
-		"NOTICE: diskqueue(%s) jump to next file and saving bad file as %s",
-		d.name, badRenameFn)
-
 	err := AtomicRename(badFn, badRenameFn)
 	if err != nil {
 		log.Warnf(
-			"ERROR: diskqueue(%s) failed to rename bad diskqueue file %s to %s",
-			d.name, badFn, badRenameFn)
+			"ERROR: diskqueue(%s) failed to rename bad diskqueue file %s to %s, error: %s",
+			d.name, badFn, badRenameFn, err.Error())
+	} else {
+		log.Warnf(
+			"NOTICE: diskqueue(%s) jump to next file and saving bad file as %s",
+			d.name, badRenameFn)
 	}
 
-	d.readFileNum++
+	if failRead >= 10 {
+		log.Errorf("ERROR: diskqueue(%s) continue fail read, set readFileNum with writeFileNum: %d", d.name, d.writeFileNum)
+		d.readFileNum = d.writeFileNum
+	} else {
+		d.readFileNum++
+	}
 	d.readPos = 0
 	d.nextReadFileNum = d.readFileNum
 	d.nextReadPos = 0
@@ -708,6 +722,8 @@ func (d *diskQueue) ioLoop() {
 	var r chan []byte
 
 	syncTicker := time.NewTicker(d.syncTimeout)
+	failRead := 1
+	backoff := utils.NewBackoff(2, 1, time.Second, time.Minute)
 
 DONE:
 	for {
@@ -725,19 +741,32 @@ DONE:
 		if d.needSync {
 			err = d.sync()
 			if err != nil {
-				log.Warnf("ERROR: diskqueue(%s) failed to sync - %s", d.name, err)
+				log.Warnf("ERROR: diskqueue(%s) failed to sync - %s", d.name, err.Error())
 			}
 		}
 
 		if origin == FromNone {
-			if (d.readFileNum < d.writeFileNum) || (d.readPos < d.writePos) {
+			// 限制为10，否则kill之后接收不到 exitChan 卡住
+			if (d.readFileNum < d.writeFileNum || d.readPos < d.writePos) && failRead <= 10 {
 				if d.nextReadPos == d.readPos {
 					dataRead, err = d.readOne()
-					if err != nil {
-						log.Warnf("ERROR: reading from diskqueue(%s) at %d of %s - %s",
-							d.name, d.readPos, d.fileName(d.readFileNum), err)
+					if err != nil && atomic.LoadInt32(&d.stopped) == 0 {
+						log.Errorf("ERROR: reading from diskqueue(%s) at %d of %s failRead %d - %s",
+							d.name, d.readPos, d.fileName(d.readFileNum), failRead, err.Error())
+						if os.IsNotExist(err) || strings.Contains(err.Error(), ErrNoSuchFileOrDirectory) {
+							d.readFileNum++
+							d.readPos = 0
+							if failRead >= 10 {
+								log.Errorf("ERROR: diskqueue(%s) continue fail read, set readFileNum with writeFileNum: %d", d.name, d.writeFileNum)
+								d.readFileNum = d.writeFileNum
+							}
+							failRead++
+							continue
+						}
 						// NOTE: 根据 handleReadError() 的逻辑，只要读发生错误，就会调过当前这个文件，直接开始读下一个文件
-						d.handleReadError()
+						d.handleReadError(failRead)
+						time.Sleep(backoff.Duration())
+						failRead++
 						continue
 					}
 				}
@@ -757,6 +786,8 @@ DONE:
 		} else {
 			r = d.readChan
 		}
+		failRead = 1
+		backoff.Reset()
 
 		select {
 		// the Go channel spec dictates that nil channel operations (read or write)
@@ -796,7 +827,7 @@ DONE:
 				err = d.writeOne(dataRead)
 				if err != nil {
 					// FIXME: 需要一个合适的方案防止数据丢失
-					log.Errorf("DISKQUEUE(%s): drop one msg from memory chan - %v", d.name, err)
+					log.Errorf("DISKQUEUE(%s): drop one msg from memory chan - %s", d.name, err.Error())
 				}
 			}
 			break DONE

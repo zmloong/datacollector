@@ -336,7 +336,7 @@ func NewLogExportRunner(rc RunnerConfig, cleanChan chan<- cleaner.CleanSignal, r
 				senderConfig[senderConf.KeyPandoraExtraInfo] = "false"
 			}
 			if senderConfig[senderConf.KeyPandoraDescription] == "" {
-				senderConfig[senderConf.KeyPandoraDescription] = DatacollectorAutoCreateDescription
+				senderConfig[senderConf.KeyPandoraDescription] = LogkitAutoCreateDescription
 			}
 		}
 		if senderType, ok := senderConfig[senderConf.KeySenderType]; ok && senderType == senderConf.TypeOpenFalconTransfer {

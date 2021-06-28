@@ -10,6 +10,7 @@ const (
 	KeyAuthUsername = "auth_username"
 	KeyAuthPassword = "auth_password"
 
+	KeyRawDataTimeout    = "raw_data_timeout"
 	KeyLogPath           = "log_path"
 	KeyLogPathOld        = "log_path_old"
 	KeyMetaPath          = "meta_path"
@@ -19,8 +20,8 @@ const (
 	KeyWhence            = "read_from"
 	KeyEncoding          = "encoding"
 	KeyMysqlEncoding     = "encoding"
-	KeyOracleEncoding    = "encoding"
 	KeyReadIOLimit       = "readio_limit"
+	KeyDelimiter         = "delimiter"
 	KeyDataSourceTag     = "datasource_tag"
 	KeyEncodeTag         = "encode_tag"
 	KeyTagFile           = "tag_file"
@@ -45,35 +46,28 @@ const (
 	KeyStatInterval  = "stat_interval"
 	KeyRunTime       = "run_time"
 
-	KeyMysqlOffsetKey     = "mysql_offset_key"
+	KeyMysqlDataSource  = "mysql_datasource"
+	KeyMysqlDataBase    = "mysql_database"
+	KeyMysqlSQL         = "mysql_sql"
+	KeyMysqlCron        = "mysql_cron"
+	KeyMysqlExecOnStart = "mysql_exec_onstart"
+	KeyMysqlHistoryAll  = "mysql_history_all"
+	KeyMysqlTable       = "mysql_table"
+	KeyMysqlParam       = "mysql_param"
+
+	KeyMysqlFullQuery  = "mysql_fullQuery"
+	KeyMysqlNeedOffset = "mysql_need_offset"
+	KeyMysqlCalcTotal  = "mysql_calc_total"
+
+	//递增的时间列相关
 	KeyMysqlTimestampKey  = "mysql_timestamp_key"
 	KeyMysqlStartTime     = "mysql_start_time"
-	KeyMysqlBatchDuration = "mysql_batch_intervel"
 	KeyMysqlTimestampInt  = "mysql_timestamp_int"
-	KeyMysqlReadBatch     = "mysql_limit_batch"
-	KeyMysqlDataSource    = "mysql_datasource"
-	KeyMysqlDataBase      = "mysql_database"
-	KeyMysqlSQL           = "mysql_sql"
-	KeyMysqlCron          = "mysql_cron"
-	KeyMysqlExecOnStart   = "mysql_exec_onstart"
-	KeyMysqlHistoryAll    = "mysql_history_all"
-	KyeMysqlTable         = "mysql_table"
-	KeyMysqlParam         = "mysql_param"
+	KeyMysqlBatchDuration = "mysql_batch_intervel"
 
-	KeyOracleOffsetKey     = "oracle_offset_key"
-	KeyOracleTimestampKey  = "oracle_timestamp_key"
-	KeyOracleStartTime     = "oracle_start_time"
-	KeyOracleBatchDuration = "oracle_batch_intervel"
-	KeyOracleTimestampInt  = "oracle_timestamp_int"
-	KeyOracleReadBatch     = "oracle_limit_batch"
-	KeyOracleDataSource    = "oracle_datasource"
-	KeyOracleDataBase      = "oracle_database"
-	KeyOracleSQL           = "oracle_sql"
-	KeyOracleCron          = "oracle_cron"
-	KeyOracleExecOnStart   = "oracle_exec_onstart"
-	KeyOracleHistoryAll    = "oracle_history_all"
-	KyeOracleTable         = "oracle_table"
-	KeyOracleParam         = "oracle_param"
+	//递增列(非时间)相关
+	KeyMysqlOffsetKey = "mysql_offset_key"
+	KeyMysqlReadBatch = "mysql_limit_batch"
 
 	KeySQLSchema        = "sql_schema"
 	KeyMagicLagDuration = "magic_lag_duration"
@@ -100,17 +94,21 @@ const (
 	KeyPGsqlCron        = "postgres_cron"
 	KeyPGsqlExecOnStart = "postgres_exec_onstart"
 
-	KeyESReadBatch   = "es_limit_batch"
-	KeyESIndex       = "es_index"
-	KeyESType        = "es_type"
-	KeyESHost        = "es_host"
-	KeyESKeepAlive   = "es_keepalive"
-	KeyESVersion     = "es_version"
-	KeyESCron        = "es_cron"
-	KeyESExecOnstart = "es_exec_onstart"
-	KeyESCronOffset  = "es_cron_offset"
-	KeyESDateShift   = "es_date_shift"
-	KeyESDateOffset  = "es_date_offset"
+	KeyESReadBatch       = "es_limit_batch"
+	KeyESIndex           = "es_index"
+	KeyESType            = "es_type"
+	KeyESHost            = "es_host"
+	KeyESKeepAlive       = "es_keepalive"
+	KeyESVersion         = "es_version"
+	KeyESCron            = "es_cron"
+	KeyESExecOnstart     = "es_exec_onstart"
+	KeyESOffsetKey       = "es_cron_offset"
+	KeyESOffsetKeyType   = "es_offset_key_type"
+	KeyESOffsetStartTime = "es_offset_start_time"
+	KeyESDateShift       = "es_date_shift"
+	KeyESDateOffset      = "es_date_offset"
+	KeyESDelayTime       = "es_delay_time"
+	KeyESDelayTimeUnit   = "es_delay_time_unit"
 
 	KeyMongoHost        = "mongo_host"
 	KeyMongoDatabase    = "mongo_database"
@@ -132,6 +130,7 @@ const (
 
 	KeyScriptParams        = "script_params"
 	KeyScriptParamsSpliter = "script_params_spliter"
+	KeyScriptTimeout       = "script_timeout"
 	KeyScriptContent       = "script_content"
 	KeyExecInterpreter     = "script_exec_interprepter"
 	KeyScriptCron          = "script_cron"
@@ -153,6 +152,7 @@ const (
 // Constants for cloudtrail
 const (
 	KeyS3Region          = "s3_region"
+	KeyS3Endpoint        = "s3_endpoint"
 	KeyS3AccessKey       = "s3_access_key"
 	KeyS3SecretKey       = "s3_secret_key"
 	KeyS3Bucket          = "s3_bucket"
@@ -201,6 +201,7 @@ const (
 	ElasticVersion3 = "3.x"
 	ElasticVersion5 = "5.x"
 	ElasticVersion6 = "6.x"
+	ElasticVersion7 = "7.x"
 )
 
 // Constants for HTTP
@@ -209,7 +210,7 @@ const (
 	KeyHTTPServicePath    = "http_service_path"
 
 	DefaultHTTPServiceAddress = ":4000"
-	DefaultHTTPServicePath    = "/datacollector/data"
+	DefaultHTTPServicePath    = "/guanan/data"
 )
 
 // Constants for Redis
@@ -326,7 +327,6 @@ const (
 	ModeFileAuto     = "fileauto"
 	ModeDirx         = "dirx"
 	ModeMySQL        = "mysql"
-	ModeOracle       = "godror"
 	ModeMSSQL        = "mssql"
 	ModePostgreSQL   = "postgres"
 	ModeElastic      = "elastic"

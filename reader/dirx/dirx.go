@@ -4,13 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/bmatcuk/doublestar"
 	jsoniter "github.com/json-iterator/go"
 
 	"datacollector/log"
@@ -72,6 +73,7 @@ type Reader struct {
 	validFilesRegex      string
 	whence               string
 	bufferSize           int
+	maxLineLen           int64
 
 	expireMap map[string]int64
 
@@ -149,6 +151,7 @@ func NewReader(meta *reader.Meta, conf conf.MapConf) (reader.Reader, error) {
 	}
 
 	deleteDirs := make(chan string, 10)
+	maxLineLen, _ := conf.GetInt64Or(KeyRunnerMaxLineLen, 0)
 	return &Reader{
 		meta:                 meta,
 		status:               StatusInit,
@@ -173,6 +176,7 @@ func NewReader(meta *reader.Meta, conf conf.MapConf) (reader.Reader, error) {
 		bufferSize:           bufferSize,
 		readSameInode:        readSameInode,
 		expireMap:            make(map[string]int64),
+		maxLineLen:           maxLineLen,
 	}, nil
 }
 
@@ -211,7 +215,7 @@ func (r *Reader) sendError(err error) {
 	}
 	defer func() {
 		if rec := recover(); rec != nil {
-			log.Errorf("Reader %q was panicked and recovered from %v", r.Name(), rec)
+			log.Errorf("Reader %q was panicked and recovered from %v\nstack: %s", r.Name(), rec, debug.Stack())
 		}
 	}()
 	r.errChan <- err
@@ -224,7 +228,7 @@ func (r *Reader) statLogPath() {
 		return
 	}
 
-	matches, err := filepath.Glob(r.logPathPattern)
+	matches, err := doublestar.Glob(r.logPathPattern)
 	if err != nil {
 		errMsg := fmt.Sprintf("Runner[%v] stat log path failed: %v", r.meta.RunnerName, err)
 		log.Error(errMsg)
@@ -239,7 +243,7 @@ func (r *Reader) statLogPath() {
 
 	var unmatchMap = make(map[string]bool)
 	if r.ignoreLogPathPattern != "" {
-		unmatches, err := filepath.Glob(r.ignoreLogPathPattern)
+		unmatches, err := doublestar.Glob(r.ignoreLogPathPattern)
 		if err != nil {
 			log.Errorf("Runner[%v] stat ignoreLogPathPattern error %v", r.meta.RunnerName, err)
 			r.setStatsError("Runner[" + r.meta.RunnerName + "] stat ignoreLogPathPattern error " + err.Error())
@@ -299,8 +303,7 @@ func (r *Reader) statLogPath() {
 			MsgChan:            r.msgChan,
 			ErrChan:            r.errChan,
 			ReadSameInode:      r.readSameInode,
-			expireMap:          r.expireMap,
-		}, r.notFirstTime)
+		}, r.notFirstTime, r.maxLineLen)
 		if err != nil {
 			if err == ErrAlreadyExist {
 				continue
@@ -323,7 +326,7 @@ func (r *Reader) statLogPath() {
 
 		if r.hasStopped() || r.isStopping() {
 			log.Warnf("Runner[%v] created new reader for log path %q but daemon reader has stopped/is stopping, will not run at this time", r.meta.RunnerName, logPath)
-			continue
+			break
 		}
 
 		go dr.Run()

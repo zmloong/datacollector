@@ -22,6 +22,7 @@ import (
 	"github.com/axgle/mahonia"
 
 	"datacollector/log"
+	"datacollector/utils"
 
 	"datacollector/conf"
 	"datacollector/reader"
@@ -53,15 +54,17 @@ type LastSync struct {
 
 // BufReader implements buffering for an FileReader object.
 type BufReader struct {
-	stopped       int32
-	buf           []byte
-	mutiLineCache *LineCache
-	rd            reader.FileReader // reader provided by the client
-	r, w          int               // buf read and write positions
-	err           error
-	lastByte      int
-	lastRuneSize  int
-	lastSync      LastSync
+	stopped          int32
+	buf              []byte
+	delim            []byte
+	mutiLineCache    *LineCache
+	waitForWholeLine bool              //readWholeLine
+	rd               reader.FileReader // reader provided by the client
+	r, w             int               // buf read and write positions
+	err              error
+	lastByte         int
+	lastRuneSize     int
+	lastSync         LastSync
 
 	runTime reader.RunTime
 
@@ -79,17 +82,19 @@ type BufReader struct {
 	// 这里的变量用于记录buffer中的数据从底层的哪个DataSource出来的，用于精准定位seqfile的DataSource
 	lastRdSource []reader.SourceIndex
 	latestSource string
+	backoff      *utils.Backoff
+	maxLenLine   int64
 }
 
 const minReadBufferSize = 16
 
 //最大连续读到空的尝试次数
-const maxConsecutiveEmptyReads = 10
+const maxConsecutiveEmptyReads = 40
 
 // NewReaderSize returns a new Reader whose buffer has at least the specified
 // size. If the argument FileReader is already a Reader with large enough
 // size, it returns the underlying Reader.
-func NewReaderSize(rd reader.FileReader, meta *reader.Meta, size int) (*BufReader, error) {
+func NewReaderSize(rd reader.FileReader, meta *reader.Meta, size int, maxLineLen int64) (*BufReader, error) {
 	// Is it already a Reader?
 	if size < minReadBufferSize {
 		size = minReadBufferSize
@@ -138,9 +143,15 @@ func NewReaderSize(rd reader.FileReader, meta *reader.Meta, size int) (*BufReade
 	r.stopped = 0
 	r.reset(make([]byte, size), rd)
 	r.mutiLineCache = NewLineCache()
+	r.backoff = utils.NewBackoff(2, 1, 1*time.Second, 5*time.Minute)
+	r.maxLenLine = maxLineLen
 
 	r.Meta = meta
 	encodingWay := r.Meta.GetEncodingWay()
+	r.delim = getDelimByEncodingWay(encodingWay)
+	if r.Meta.Delimiter != "" {
+		r.delim = []byte(r.Meta.Delimiter)
+	}
 	if encodingWay != "" && encodingWay != DefaultEncodingWay {
 		r.decoder = mahonia.NewDecoder(r.Meta.GetEncodingWay())
 		if r.decoder == nil {
@@ -176,6 +187,11 @@ func (b *BufReader) SetMode(mode string, v interface{}) (err error) {
 		err = fmt.Errorf("%v set mode error %v ", b.Name(), err)
 		return
 	}
+	return
+}
+
+func (b *BufReader) SetWaitFlagForWholeLine() {
+	b.waitForWholeLine = true
 	return
 }
 
@@ -270,6 +286,17 @@ func (b *BufReader) fill() {
 		}
 
 		b.w += n
+
+		if err == io.EOF && b.waitForWholeLine {
+			if i == 1 { //when last attempts,return err info;
+				b.err = err
+				return
+			}
+
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
 		if err != nil {
 			b.err = err
 			return
@@ -277,6 +304,7 @@ func (b *BufReader) fill() {
 		if n > 0 {
 			return
 		}
+
 	}
 	b.err = io.ErrNoProgress
 }
@@ -300,22 +328,18 @@ func (b *BufReader) buffered() int { return b.w - b.r }
 // by the next I/O operation, most clients should use
 // readBytes or ReadString instead.
 // readSlice returns err != nil if and only if line does not end in delim.
-func (b *BufReader) readSlice(delim byte) (line []byte, err error) {
+func (b *BufReader) readSlice(delim []byte) (line []byte, err error) {
 	b.mux.Lock()
 	defer b.mux.Unlock()
 	for {
 		if atomic.LoadInt32(&b.stopped) > 0 {
-			if !IsSelfRunner(b.Meta.RunnerName) {
-				log.Warn("BufReader was stopped while reading...")
-			} else {
-				log.Debug("BufReader was stopped while reading...")
-			}
+			log.Debug("BufReader was stopped while reading...")
 			return
 		}
 		// Search buffer.
-		if i := bytes.IndexByte(b.buf[b.r:b.w], delim); i >= 0 {
-			line = b.buf[b.r : b.r+i+1]
-			b.r += i + 1
+		if i := bytes.Index(b.buf[b.r:b.w], delim); i >= 0 {
+			line = b.buf[b.r : b.r+i+len(delim)]
+			b.r += i + len(delim)
 			break
 		}
 		// Pending error?
@@ -352,12 +376,14 @@ func (b *BufReader) readSlice(delim byte) (line []byte, err error) {
 // readBytes returns err != nil if and only if the returned data does not end in
 // delim.
 // For simple uses, a Scanner may be more convenient.
-func (b *BufReader) readBytes(delim byte) ([]byte, error) {
+func (b *BufReader) readBytes(delim []byte) ([]byte, error) {
 	// Use readSlice to look for array,
 	// accumulating full buffers.
 	var frag []byte
-	var full [][]byte
+	var full = make([][]byte, 0, 10)
 	var err error
+	var lineLen int64
+	var nolog bool
 	for {
 		var e error
 		frag, e = b.readSlice(delim)
@@ -371,7 +397,18 @@ func (b *BufReader) readBytes(delim byte) ([]byte, error) {
 		}
 
 		// Make a copy of the buffer.
-		buf := make([]byte, len(frag))
+		fragLen := len(frag)
+		lineLen += int64(fragLen)
+		if b.maxLenLine > 0 && lineLen > b.maxLenLine {
+			if !nolog {
+				log.Warnf("Runner[%v] max than %d, discard this part", b.Meta.RunnerName, b.maxLenLine)
+			}
+			nolog = true
+			lineLen = 0
+			full = make([][]byte, 0, len(full)) // 重新申请空间
+			continue
+		}
+		buf := make([]byte, fragLen)
 		copy(buf, frag)
 		full = append(full, buf)
 	}
@@ -399,7 +436,7 @@ func (b *BufReader) readBytes(delim byte) ([]byte, error) {
 // ReadString returns err != nil if and only if the returned data does not end in
 // delim.
 // For simple uses, a Scanner may be more convenient.
-func (b *BufReader) ReadString(delim byte) (ret string, err error) {
+func (b *BufReader) ReadString(delim []byte) (ret string, err error) {
 	bytes, err := b.readBytes(delim)
 	ret = *(*string)(unsafe.Pointer(&bytes))
 	//默认都是utf-8
@@ -414,7 +451,7 @@ func (b *BufReader) ReadString(delim byte) (ret string, err error) {
 func (b *BufReader) ReadPattern() (string, error) {
 	var maxTimes int = 0
 	for {
-		line, err := b.ReadString('\n')
+		line, err := b.ReadString(b.delim)
 		//读取到line的情况
 		if len(line) > 0 {
 			if b.mutiLineCache.Size() <= 0 {
@@ -459,15 +496,14 @@ func (b *BufReader) FormMutiLine() []byte {
 
 //ReadLine returns a string line as a normal Reader
 func (b *BufReader) ReadLine() (ret string, err error) {
-	now := time.Now()
-	if !reader.InRunTime(now.Hour(), now.Minute(), b.runTime) {
+	if !reader.InRunTime(0, 0, b.runTime) {
 		time.Sleep(10 * time.Second)
 		return "", nil
 	}
 
 	if b.multiLineRegexp == nil {
-		ret, err = b.ReadString('\n')
-		if os.IsNotExist(err) {
+		ret, err = b.ReadString(b.delim)
+		if err != nil && os.IsNotExist(err) {
 			if b.lastErrShowTime.Add(5 * time.Second).Before(time.Now()) {
 				if !IsSelfRunner(b.Meta.RunnerName) {
 					log.Errorf("runner[%v] ReadLine err %v", b.Meta.RunnerName, err)
@@ -571,8 +607,11 @@ func (b *BufReader) SyncMeta() {
 			} else {
 				log.Debugf("Runner[%v] %s cannot write buf, err :%v", b.Meta.RunnerName, b.Name(), err)
 			}
+			// 写磁盘失败很可能一致失败，因此sleep 10s
+			time.Sleep(b.backoff.Duration())
 			return
 		}
+		b.backoff.Reset()
 		err = b.Meta.WriteCacheLine(linecache)
 		if err != nil {
 			if !IsSelfRunner(b.Meta.RunnerName) {
@@ -580,8 +619,10 @@ func (b *BufReader) SyncMeta() {
 			} else {
 				log.Debugf("Runner[%v] %s cannot write linecache, err :%v", b.Meta.RunnerName, b.Name(), err)
 			}
+			time.Sleep(b.backoff.Duration())
 			return
 		}
+		b.backoff.Reset()
 		b.lastSync.cache = linecache
 		b.lastSync.buf = string(b.buf)
 		b.lastSync.r = b.r
@@ -597,8 +638,10 @@ func (b *BufReader) SyncMeta() {
 		} else {
 			log.Debugf("Runner[%v] %s cannot write reader %v's meta info, err %v", b.Meta.RunnerName, b.Name(), b.rd.Name(), err)
 		}
+		time.Sleep(b.backoff.Duration())
 		return
 	}
+	b.backoff.Reset()
 }
 
 func NewFileDirReader(meta *reader.Meta, conf conf.MapConf) (reader reader.Reader, err error) {
@@ -617,13 +660,14 @@ func NewFileDirReader(meta *reader.Meta, conf conf.MapConf) (reader reader.Reade
 	newfileNewLine, _ := conf.GetBoolOr(KeyNewFileNewLine, false)
 	skipFirstLine, _ := conf.GetBoolOr(KeySkipFileFirstLine, false)
 	readSameInode, _ := conf.GetBoolOr(KeyReadSameInode, false)
-	fr, err := seqfile.NewSeqFile(meta, logpath, ignoreHidden, newfileNewLine, ignoreFileSuffix, validFilesRegex, whence, nil, inodeSensitive)
+	fr, err := seqfile.NewSeqFile(meta, logpath, ignoreHidden, newfileNewLine, ignoreFileSuffix, validFilesRegex, whence, inodeSensitive)
 	if err != nil {
 		return
 	}
 	fr.SkipFileFirstLine = skipFirstLine
 	fr.ReadSameInode = readSameInode
-	return NewReaderSize(fr, meta, bufSize)
+	maxLineLen, _ := conf.GetInt64Or(KeyRunnerMaxLineLen, 0)
+	return NewReaderSize(fr, meta, bufSize, maxLineLen)
 }
 
 func NewSingleFileReader(meta *reader.Meta, conf conf.MapConf) (reader reader.Reader, err error) {
@@ -639,10 +683,24 @@ func NewSingleFileReader(meta *reader.Meta, conf conf.MapConf) (reader reader.Re
 	if err != nil {
 		return
 	}
-	return NewReaderSize(fr, meta, bufSize)
+	maxLineLen, _ := conf.GetInt64Or(KeyRunnerMaxLineLen, 0)
+	r, err := NewReaderSize(fr, meta, bufSize, maxLineLen)
+	r.SetWaitFlagForWholeLine()
+	return r, err
 }
 
 func init() {
 	reader.RegisterConstructor(ModeDir, NewFileDirReader)
 	reader.RegisterConstructor(ModeFile, NewSingleFileReader)
+}
+
+func getDelimByEncodingWay(encodingWay string) []byte {
+	switch encodingWay {
+	case "UTF-16BE", "utf-16be":
+		return []byte("\x00\n")
+	case "UTF-16LE", "utf16-le":
+		return []byte("\n\x00")
+	default:
+		return []byte("\n")
+	}
 }

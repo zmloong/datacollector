@@ -21,6 +21,9 @@ import (
 const (
 	DefaultDirPerm = 0755
 )
+const (
+	Mb = 1024 * 1024
+)
 
 // 创建目录，并返回日志模式
 func LogDirAndPattern(logpath string) (dir, pattern string, err error) {
@@ -177,4 +180,12 @@ func DeepCopyByJSON(dst, src interface{}) {
 		dst = src
 		return
 	}
+}
+func GetKeyOfNotEmptyValueInMap(m map[string]string) (key string, exist bool) {
+	for k, v := range m {
+		if v != "" {
+			return k, true
+		}
+	}
+	return "", false
 }

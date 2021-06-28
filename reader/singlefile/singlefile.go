@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"datacollector/log"
+	"datacollector/utils"
 
 	"datacollector/rateio"
 	"datacollector/reader"
@@ -41,6 +42,7 @@ func NewSingleFile(meta *reader.Meta, path, whence string, originOffset int64, e
 	var pfi os.FileInfo
 	var f *os.File
 	originpath := path
+	backoff := utils.NewBackoff(2, 4, 1*time.Minute, 10*time.Minute)
 	for {
 		path, pfi, err = GetRealPath(path)
 		if err != nil || pfi == nil {
@@ -52,7 +54,7 @@ func NewSingleFile(meta *reader.Meta, path, whence string, originOffset int64, e
 			} else {
 				log.Debugf("Runner[%v] %s - utils.GetRealPath failed, err:%v", meta.RunnerName, path, err)
 			}
-			time.Sleep(time.Minute)
+			time.Sleep(backoff.Duration())
 			continue
 		}
 		if !pfi.Mode().IsRegular() {
@@ -64,7 +66,7 @@ func NewSingleFile(meta *reader.Meta, path, whence string, originOffset int64, e
 			} else {
 				log.Debugf("Runner[%v] %s - file failed, err: file is not regular", meta.RunnerName, path)
 			}
-			time.Sleep(time.Minute)
+			time.Sleep(backoff.Duration())
 			continue
 		}
 		f, err = os.Open(path)
@@ -77,7 +79,7 @@ func NewSingleFile(meta *reader.Meta, path, whence string, originOffset int64, e
 			} else {
 				log.Debugf("Runner[%v] %s - open file err:%v", meta.RunnerName, path, err)
 			}
-			time.Sleep(time.Minute)
+			time.Sleep(backoff.Duration())
 			continue
 		}
 		break
@@ -267,6 +269,7 @@ func (sf *SingleFile) Reopen() (err error) {
 	if err != nil {
 		return
 	}
+	doneFileOffset := sf.offset
 
 	if newInode == oldInode {
 		return
@@ -275,7 +278,7 @@ func (sf *SingleFile) Reopen() (err error) {
 	sf.f = nil
 	detectStr := sf.detectMovedName(oldInode)
 	if detectStr != "" {
-		if derr := sf.meta.AppendDoneFileInode(detectStr, oldInode); derr != nil {
+		if derr := sf.meta.AppendDoneFileInode(detectStr, oldInode, doneFileOffset); derr != nil {
 			if !IsSelfRunner(sf.meta.RunnerName) {
 				log.Errorf("Runner[%v] AppendDoneFile %v error %v", sf.meta.RunnerName, detectStr, derr)
 			} else {

@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/bmatcuk/doublestar"
 	jsoniter "github.com/json-iterator/go"
 
 	"datacollector/log"
@@ -78,22 +79,24 @@ type Reader struct {
 	whence               string
 
 	notFirstTime bool
+	maxLineLen   int64
 }
 
 type ActiveReader struct {
-	cacheLineMux sync.RWMutex
-	br           *bufreader.BufReader
-	realpath     string
-	originpath   string
-	readcache    string
-	msgchan      chan<- Result
-	errChan      chan<- error
-	resetChan    chan<- string
-	status       int32
-	inactive     int32 //当inactive>0 时才会被expire回收
-	runnerName   string
-	runtime      reader.RunTime
-	inodeStr     string
+	cacheLineMux  sync.RWMutex
+	br            *bufreader.BufReader
+	realpath      string
+	originpath    string
+	readcache     string
+	halfLineCache map[string]string //针对不同的数据源做一个缓存
+	msgchan       chan<- Result
+	errChan       chan<- error
+	resetChan     chan<- string
+	status        int32
+	inactive      int32 //当inactive>0 时才会被expire回收
+	runnerName    string
+	runtime       reader.RunTime
+	inodeStr      string
 
 	emptyLineCnt int
 
@@ -118,6 +121,7 @@ func NewActiveReader(originPath, realPath, whence, inode string, r *Reader) (ar 
 	}
 	subMeta.SetEncodingWay(r.meta.GetEncodingWay())
 	subMeta.Readlimit = r.meta.Readlimit
+	subMeta.Delimiter = r.meta.Delimiter
 	isNewFile := r.meta.IsStatisticFileExist() || r.notFirstTime //是否为存量文件
 	if isNewFile && subMeta.IsNotExist() {
 		whence = WhenceOldest // 非存量文件第一次读取时从头开始读
@@ -140,7 +144,7 @@ func NewActiveReader(originPath, realPath, whence, inode string, r *Reader) (ar 
 			return
 		}
 	}
-	bf, err := bufreader.NewReaderSize(fr, subMeta, bufreader.DefaultBufSize)
+	bf, err := bufreader.NewReaderSize(fr, subMeta, bufreader.DefaultBufSize, r.maxLineLen)
 	if err != nil {
 		//如果没有创建成功，要把reader close掉，否则会因为ratelimit导致线程泄露
 		fr.Close()
@@ -154,20 +158,21 @@ func NewActiveReader(originPath, realPath, whence, inode string, r *Reader) (ar 
 		inode = strconv.Itoa(int(inodeInt))
 	}
 	return &ActiveReader{
-		cacheLineMux: sync.RWMutex{},
-		br:           bf,
-		realpath:     realPath,
-		originpath:   originPath,
-		msgchan:      r.msgChan,
-		errChan:      r.errChan,
-		resetChan:    r.resetChan,
-		inodeStr:     inode,
-		inactive:     1,
-		emptyLineCnt: 0,
-		runnerName:   r.meta.RunnerName,
-		status:       StatusInit,
-		statsLock:    sync.RWMutex{},
-		runtime:      r.runTime,
+		cacheLineMux:  sync.RWMutex{},
+		br:            bf,
+		realpath:      realPath,
+		originpath:    originPath,
+		msgchan:       r.msgChan,
+		errChan:       r.errChan,
+		halfLineCache: make(map[string]string),
+		resetChan:     r.resetChan,
+		inodeStr:      inode,
+		inactive:      1,
+		emptyLineCnt:  0,
+		runnerName:    r.meta.RunnerName,
+		status:        StatusInit,
+		statsLock:     sync.RWMutex{},
+		runtime:       r.runTime,
 	}, nil
 
 }
@@ -294,8 +299,7 @@ func (ar *ActiveReader) Run() {
 			}
 			return
 		}
-		now := time.Now()
-		if !reader.InRunTime(now.Hour(), now.Minute(), ar.runtime) {
+		if !reader.InRunTime(0, 0, ar.runtime) {
 			time.Sleep(time.Minute)
 			continue
 		}
@@ -315,7 +319,40 @@ func (ar *ActiveReader) Run() {
 				ar.Stop()
 				return
 			}
-			if ar.readcache == "" {
+
+			source := ar.br.Source()
+			if _, ok := ar.halfLineCache[source]; !ok {
+				ar.cacheLineMux.Lock()
+				ar.halfLineCache[source] = ""
+				ar.cacheLineMux.Unlock()
+			}
+
+			if ar.readcache != "" && err == io.EOF {
+				ar.cacheLineMux.Lock()
+				if len(ar.halfLineCache[source])+len(ar.readcache) > 20*utils.Mb {
+					log.Warnf("Runner[%v] log path[%v] reader[%v] single line size has  exceed 20mb", ar.runnerName, ar.originpath, source)
+					ar.readcache = ar.halfLineCache[source] + ar.readcache
+					ar.halfLineCache[source] = ""
+				} else {
+					ar.halfLineCache[source] += ar.readcache
+					ar.readcache = ""
+				}
+				ar.cacheLineMux.Unlock()
+			}
+
+			if err == nil && ar.halfLineCache[source] != "" {
+				ar.cacheLineMux.Lock()
+				ar.readcache += ar.halfLineCache[source]
+				ar.halfLineCache[source] = ""
+				ar.cacheLineMux.Unlock()
+			}
+			if len(ar.readcache) == 0 && ar.halfLineCache[source] == "" {
+				if key, exist := utils.GetKeyOfNotEmptyValueInMap(ar.halfLineCache); exist {
+					source = key
+				}
+			}
+
+			if ar.readcache == "" && ar.halfLineCache[source] == "" {
 				ar.emptyLineCnt++
 				//文件EOF，同时没有任何内容，代表不是第一次EOF，休息时间设置长一些
 				if err == io.EOF {
@@ -336,6 +373,17 @@ func (ar *ActiveReader) Run() {
 				//读取的结果为空，无论如何都sleep 1s
 				time.Sleep(time.Second)
 				continue
+			} else if ar.readcache == "" && ar.halfLineCache[source] != "" {
+				ar.emptyLineCnt++
+				if err == io.EOF && ar.emptyLineCnt < 40 {
+					log.Debugf("Runner[%s] %s meet EOF, ActiveReader was inactive now, stop it", ar.runnerName, ar.originpath)
+					time.Sleep(1 * time.Second)
+					continue
+				}
+				ar.cacheLineMux.Lock()
+				ar.readcache = ar.halfLineCache[source]
+				ar.halfLineCache[source] = ""
+				ar.cacheLineMux.Unlock()
 			}
 		}
 		log.Debugf("Runner[%s] %s >>>>>>readcache <%s> linecache <%s>", ar.runnerName, ar.originpath, strings.TrimSpace(ar.readcache), string(ar.br.FormMutiLine()))
@@ -346,11 +394,7 @@ func (ar *ActiveReader) Run() {
 			}
 			repeat++
 			if repeat%3000 == 0 {
-				if !IsSelfRunner(ar.runnerName) {
-					log.Errorf("Runner[%s] %s ActiveReader has timeout 3000 times with readcache %s", ar.runnerName, ar.originpath, strings.TrimSpace(ar.readcache))
-				} else {
-					log.Debugf("Runner[%s] %s ActiveReader has timeout 3000 times with readcache %s", ar.runnerName, ar.originpath, strings.TrimSpace(ar.readcache))
-				}
+				log.Debugf("Runner[%s] %s ActiveReader has timeout 3000 times with readcache %s", ar.runnerName, ar.originpath, strings.TrimSpace(ar.readcache))
 			}
 
 			atomic.StoreInt32(&ar.inactive, 0)
@@ -385,6 +429,10 @@ func (ar *ActiveReader) Close() error {
 		log.Debugf("Runner[%s] ActiveReader %s was closed", ar.runnerName, ar.originpath)
 	}()
 	ar.SyncMeta()
+	return ar.CloseNoSync()
+}
+
+func (ar *ActiveReader) CloseNoSync() error {
 	brCloseErr := ar.br.Close()
 	if err := ar.Stop(); err != nil {
 		return brCloseErr
@@ -408,7 +456,7 @@ func (ar *ActiveReader) sendError(err error) {
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			log.Errorf("Runner[%s] ActiveReader %s Recovered from %v", ar.runnerName, ar.originpath, r)
+			log.Errorf("Runner[%s] ActiveReader %s Recovered from %v\nstack: %s", ar.runnerName, ar.originpath, r, debug.Stack())
 		}
 	}()
 	ar.errChan <- err
@@ -451,6 +499,13 @@ func (ar *ActiveReader) expired(expire time.Duration) bool {
 	}
 	// 如果过期时间为 0，则永不过期
 	if expire.Nanoseconds() == 0 {
+		return false
+	}
+
+	if lagInfo, err := ar.br.Lag(); err != nil {
+		log.Errorf("Runner[%s] <%s> get lagInfo error: %v", ar.runnerName, ar.originpath, err)
+		return true
+	} else if lagInfo.Size != 0 {
 		return false
 	}
 	if fi.ModTime().Add(expire).Before(time.Now()) && atomic.LoadInt32(&ar.inactive) > 0 {
@@ -530,6 +585,7 @@ func NewReader(meta *reader.Meta, conf conf.MapConf) (reader.Reader, error) {
 			}
 		}
 	}
+	maxLineLen, _ := conf.GetInt64Or(KeyRunnerMaxLineLen, 0)
 
 	return &Reader{
 		meta:                 meta,
@@ -550,6 +606,7 @@ func NewReader(meta *reader.Meta, conf conf.MapConf) (reader.Reader, error) {
 		fileReaders:          make(map[string]*ActiveReader), //armapmux
 		cacheMap:             cacheMap,                       //armapmux
 		expireMap:            make(map[string]int64),
+		maxLineLen:           maxLineLen,
 	}, nil
 }
 
@@ -595,12 +652,19 @@ func (r *Reader) sendError(err error) {
 	if err == nil {
 		return
 	}
+	if r.isStopping() || r.hasStopped() {
+		log.Debugf("Runner[%s] reader %q is not running, send error operation ignored", r.meta.RunnerName, r.Name())
+		return
+	}
 	defer func() {
 		if rec := recover(); rec != nil {
-			log.Errorf("Reader %q was panicked and recovered from %v", r.Name(), rec)
+			log.Errorf("Reader %q was panicked and recovered from %v\nstack: %s", r.Name(), rec, debug.Stack())
 		}
 	}()
-	r.errChan <- err
+	select {
+	case r.errChan <- err:
+	case <-time.After(time.Second):
+	}
 }
 
 // checkExpiredFiles 函数关闭过期的文件，再更新
@@ -632,6 +696,11 @@ func (r *Reader) checkExpiredFiles() {
 }
 
 func (r *Reader) statLogPath() {
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Errorf("Reader %q was panicked and recovered from %v\nstack: %s", r.Name(), rec, debug.Stack())
+		}
+	}()
 	//达到最大打开文件数，不再追踪
 	if len(r.fileReaders) >= r.maxOpenFiles {
 		if !IsSelfRunner(r.meta.RunnerName) {
@@ -641,7 +710,7 @@ func (r *Reader) statLogPath() {
 		}
 		return
 	}
-	matches, err := filepath.Glob(r.logPathPattern)
+	matches, err := doublestar.Glob(r.logPathPattern)
 	if err != nil {
 		if !IsSelfRunner(r.meta.RunnerName) {
 			log.Errorf("Runner[%s] stat logPathPattern error %v", r.meta.RunnerName, err)
@@ -657,7 +726,7 @@ func (r *Reader) statLogPath() {
 
 	var unmatchMap = make(map[string]bool)
 	if r.ignoreLogPathPattern != "" {
-		unmatches, err := filepath.Glob(r.ignoreLogPathPattern)
+		unmatches, err := doublestar.Glob(r.ignoreLogPathPattern)
 		if err != nil {
 			log.Errorf("Runner[%s] stat ignoreLogPathPattern error %v", r.meta.RunnerName, err)
 			r.setStatsError("Runner[" + r.meta.RunnerName + "] stat ignoreLogPathPattern error " + err.Error())
@@ -693,7 +762,15 @@ func (r *Reader) statLogPath() {
 		filear, ok := r.fileReaders[rp]
 		r.armapmux.Unlock()
 		if ok {
-			if IsFileModified(rp, r.statInterval, now) {
+			lagInfo, err := filear.br.Lag()
+			if err != nil {
+				log.Errorf("Runner[%s] <%s> get lagInfo error: %v", r.meta.RunnerName, rp, err)
+				continue
+			}
+			if IsFileModified(rp, r.statInterval, now) || lagInfo.Size != 0 {
+				if atomic.LoadInt32(&filear.status) == StatusRunning {
+					continue
+				}
 				filear.Start()
 			}
 			log.Debugf("Runner[%s] <%s> is collecting, ignore...", r.meta.RunnerName, rp)
@@ -719,6 +796,16 @@ func (r *Reader) statLogPath() {
 			}
 			log.Debugf("Runner[%s] <%s> is expired, ignore...", r.meta.RunnerName, mc)
 			continue
+		}
+
+		//达到最大打开文件数，不再追踪
+		if len(r.fileReaders) >= r.maxOpenFiles {
+			if !IsSelfRunner(r.meta.RunnerName) {
+				log.Warnf("Runner[%s] %s meet maxOpenFiles limit %d, ignore Stat new log...", r.meta.RunnerName, r.Name(), r.maxOpenFiles)
+			} else {
+				log.Debugf("Runner[%s] %s meet maxOpenFiles limit %d, ignore Stat new log...", r.meta.RunnerName, r.Name(), r.maxOpenFiles)
+			}
+			break
 		}
 
 		ar, err := NewActiveReader(mc, rp, r.whence, inodeStr, r)
@@ -776,6 +863,8 @@ func (r *Reader) statLogPath() {
 			} else {
 				log.Debugf("Runner[%v] %v NewActiveReader but reader was stopped, ignore this...", r.meta.RunnerName, mc)
 			}
+			r.armapmux.Unlock()
+			break
 		}
 		r.armapmux.Unlock()
 		if !r.hasStopped() && !r.isStopping() {
@@ -786,6 +875,7 @@ func (r *Reader) statLogPath() {
 			} else {
 				log.Debugf("Runner[%s] %s NewActiveReader but reader was stopped, will not running...", r.meta.RunnerName, mc)
 			}
+			break
 		}
 	}
 
@@ -817,8 +907,7 @@ func (r *Reader) Start() error {
 		ticker := time.NewTicker(r.statInterval)
 		defer ticker.Stop()
 		for {
-			now := time.Now()
-			if reader.InRunTime(now.Hour(), now.Minute(), r.runTime) {
+			if reader.InRunTime(0, 0, r.runTime) {
 				r.checkExpiredFiles()
 				utils.CheckNotExistFile(r.meta.RunnerName, r.expireMap)
 				r.statLogPath()
@@ -1001,14 +1090,23 @@ func (r *Reader) Close() error {
 
 	// 停10ms为了管道中的数据传递完毕，确认reader run函数已经结束不会再读取，保证syncMeta的正确性
 	time.Sleep(10 * time.Millisecond)
-	r.SyncMeta()
+	r.SyncMetaClose()
+
+	// 在所有 active readers 关闭完成后再关闭管道
+	close(r.msgChan)
+	close(r.errChan)
+	return nil
+}
+
+func (r *Reader) SyncMetaClose() {
 	ars := r.getActiveReaders()
 	var wg sync.WaitGroup
 	for _, ar := range ars {
+		readcache := ar.SyncMeta()
 		wg.Add(1)
 		go func(mar *ActiveReader) {
 			defer wg.Done()
-			xerr := mar.Close()
+			xerr := mar.CloseNoSync()
 			if xerr != nil {
 				if !IsSelfRunner(r.meta.RunnerName) {
 					log.Errorf("Runner[%s] Close ActiveReader %s error %v", r.meta.RunnerName, mar.originpath, xerr)
@@ -1017,13 +1115,38 @@ func (r *Reader) Close() error {
 				}
 			}
 		}(ar)
+		if readcache == "" {
+			continue
+		}
+		r.armapmux.Lock()
+		r.cacheMap[ar.realpath] = readcache
+		r.armapmux.Unlock()
 	}
 	wg.Wait()
+	r.armapmux.Lock()
+	buf, err := jsoniter.Marshal(r.cacheMap)
+	r.armapmux.Unlock()
+	if err != nil {
+		if !IsSelfRunner(r.meta.RunnerName) {
+			log.Errorf("%s sync meta error %v, cacheMap %v", r.Name(), err, r.cacheMap)
+		} else {
+			log.Debugf("Runner[%s] %s sync meta error %v, cacheMap %v", r.meta.RunnerName, r.Name(), err, r.cacheMap)
+		}
+		return
+	}
+	err = r.meta.WriteBuf(buf, 0, 0, len(buf))
+	if err != nil {
+		if !IsSelfRunner(r.meta.RunnerName) {
+			log.Errorf("%v sync meta WriteBuf error %v, buf %v", r.Name(), err, string(buf))
+		} else {
+			log.Debugf("Runner[%s] %s sync meta WriteBuf error %v, buf %v", r.meta.RunnerName, r.Name(), err, string(buf))
+		}
+		return
+	}
 
-	// 在所有 active readers 关闭完成后再关闭管道
-	close(r.msgChan)
-	close(r.errChan)
-	return nil
+	if IsSubMetaExpire(r.submetaExpire, r.expire) {
+		r.meta.CleanExpiredSubMetas(r.submetaExpire)
+	}
 }
 
 func (r *Reader) Reset() error {
