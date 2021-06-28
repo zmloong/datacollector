@@ -33,7 +33,7 @@ import (
 
 var DIR_NOT_EXIST_SLEEP_TIME = "300" //300 s
 var DEFAULT_LOGKIT_REST_DIR = "/.datacollectorconfs"
-var LogAgentConf Config
+var DataCollectorConf Config
 
 type ManagerConfig struct {
 	BindHost string `json:"bind_host"`
@@ -144,9 +144,9 @@ func NewCustomManager(conf ManagerConfig, rr *reader.Registry, pr *parser.Regist
 
 	dir, _ := os.Executable()
 	exPath := filepath.Dir(dir)
-	if err := config.LoadEx(&LogAgentConf, ConfName); err != nil {
-		if err = config.LoadEx(&LogAgentConf, exPath+ConfLocalName); err != nil {
-			err = config.LoadEx(&LogAgentConf, "datacollector.conf")
+	if err := config.LoadEx(&DataCollectorConf, ConfName); err != nil {
+		if err = config.LoadEx(&DataCollectorConf, exPath+ConfLocalName); err != nil {
+			err = config.LoadEx(&DataCollectorConf, "datacollector.conf")
 		}
 		if err != nil {
 			log.Fatal("config.Load failed:", err)
@@ -405,8 +405,8 @@ func (m *Manager) ForkRunner(confPath string, config RunnerConfig, returnOnErr b
 	m.runnerConfigs[confPath] = config
 	log.Infof("new Runner[%v] is added, total %d", config.RunnerName, len(m.runners))
 	//ztt
-	url := LogAgentConf.JobStatus + "/" + config.TaskCollectId + "/run"
-	token := LogAgentConf.AppToken
+	url := DataCollectorConf.JobStatus + "/" + config.TaskCollectId + "/run"
+	token := DataCollectorConf.AppToken
 	go func(url string) {
 		if r := recover(); r != nil {
 			log.Errorf("recover when runner is stopped\npanic: %v\nstack: %s", r, debug.Stack())
@@ -1155,8 +1155,8 @@ func (m *Manager) stopRunner(filename string, conf RunnerConfig) error {
 	}
 	m.setRunnerConfig(filename, conf)
 	//ztt
-	url := LogAgentConf.JobStatus + "/" + conf.TaskCollectId + "/stop"
-	token := LogAgentConf.AppToken
+	url := DataCollectorConf.JobStatus + "/" + conf.TaskCollectId + "/stop"
+	token := DataCollectorConf.AppToken
 	fmt.Println("stopJobUrl:", url)
 	resp := utils.HttpCallToken("GET", url, strings.NewReader("stop"), token)
 	//resp, err := http.Get(url)

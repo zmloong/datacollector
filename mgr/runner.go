@@ -102,9 +102,9 @@ type Config struct {
 }
 
 var (
-	confLogAgent Config
-	_            Resetable  = &LogExportRunner{}
-	_            Deleteable = &LogExportRunner{}
+	confDataCollector Config
+	_                 Resetable  = &LogExportRunner{}
+	_                 Deleteable = &LogExportRunner{}
 )
 
 type LogExportRunner struct {
@@ -921,20 +921,20 @@ func (r *LogExportRunner) Run() {
 
 	dir, _ := os.Executable()
 	exPath := filepath.Dir(dir)
-	if err := conf.LoadEx(&confLogAgent, ConfName); err != nil {
-		if err = conf.LoadEx(&confLogAgent, exPath+ConfLocalName); err != nil {
-			err = conf.LoadEx(&confLogAgent, "datacollector.conf")
+	if err := conf.LoadEx(&confDataCollector, ConfName); err != nil {
+		if err = conf.LoadEx(&confDataCollector, exPath+ConfLocalName); err != nil {
+			err = conf.LoadEx(&confDataCollector, "datacollector.conf")
 		}
 		if err != nil {
 			log.Fatal("config.Load failed:", err)
 		}
 	}
 
-	sqlLimit := confLogAgent.SqlCtLimit
+	sqlLimit := confDataCollector.SqlCtLimit
 	l := rate.NewLimiter(rate.Limit(sqlLimit), 1)
 	c, _ := context.WithCancel(context.TODO())
-	url := confLogAgent.InputReceive + "?jobSerialNumber=" + r.Name()
-	token := confLogAgent.AppToken
+	url := confDataCollector.InputReceive + "?jobSerialNumber=" + r.Name()
+	token := confDataCollector.AppToken
 	for {
 		if atomic.LoadInt32(&r.stopped) > 0 {
 			log.Debugf("Runner[%v] exited from run", r.Name())
