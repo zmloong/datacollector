@@ -3,7 +3,7 @@ module datacollector
 go 1.16
 
 require (
-	github.com/Shopify/sarama v1.29.1
+	github.com/Shopify/sarama v1.23.1
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/bsm/sarama-cluster v2.1.15+incompatible
@@ -18,4 +18,5 @@ require (
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6
+	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect
 )
