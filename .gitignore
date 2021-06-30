@@ -1,3 +1,4 @@
 .datacollectorconfs/*
 logs/*
 meta/*
+__debug_bin
