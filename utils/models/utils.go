@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -604,4 +605,22 @@ func CheckErr(err error) error {
 		return fmt.Errorf("%v parse line errors occurred, error %v", errorCnt, err.Error())
 	}
 	return nil
+}
+func ExtractField(slice []string) ([]string, error) {
+	switch len(slice) {
+	case 1:
+		return slice, nil
+	case 2:
+		rgexpr := "^%\\{\\[\\S+\\]}$" // --->  %{[type]}
+		r, _ := regexp.Compile(rgexpr)
+		slice[0] = strings.TrimSpace(slice[0])
+		bol := r.MatchString(slice[0])
+		if bol {
+			rs := []rune(slice[0])
+			slice[0] = string(rs[3 : len(rs)-2])
+			return slice, nil
+		}
+	default:
+	}
+	return nil, errors.New("parameters error,  you can write two parameters like: %%{[type]}, default or only one: default")
 }

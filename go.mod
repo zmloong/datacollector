@@ -15,6 +15,7 @@ require (
 	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/oschwald/geoip2-golang v1.5.0
+	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6
