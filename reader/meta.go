@@ -440,6 +440,31 @@ func (m *Meta) ReadOffset() (currFile string, offset int64, err error) {
 	return
 }
 
+// ReadOffset 读取当前读取的文件和offset
+func (m *Meta) ReadOffsetForSql() (currFile string, offset int64, table string, err error) {
+	f, err := os.Open(m.MetaFile())
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	_, err = fmt.Fscanf(f, "%s\t%d\t%s\n", &currFile, &offset, &table)
+	if err != nil {
+		log.Debugf("meta file format err %v", err)
+		return
+	}
+	if m.mode == ModeDir || m.mode == ModeFile {
+		_, err = os.Stat(currFile)
+		if err != nil {
+			if os.IsNotExist(err) {
+				log.Errorf("meta content outdated, the file %v has been deleted", currFile)
+			}
+			return
+		}
+	}
+	return
+}
+
 // ReadDBDoneFile 读取当前Database已经读取的表
 func (m *Meta) ReadDBDoneFile(database string) (content []string, err error) {
 	doneFiles, err := m.GetDoneFiles()
@@ -502,6 +527,28 @@ func (m *Meta) AppendDoneFile(path string) (err error) {
 
 	_, err = fmt.Fprintf(f, "%s\n", path)
 	return
+}
+
+// WriteOffset 将当前文件和offset写入meta中
+func (m *Meta) WriteOffsetForSql(currFile string, offset int64, table string) (err error) {
+	var f *os.File
+	fileName := m.MetaFile()
+	tmpFileName := fmt.Sprintf("%s.%d.tmp", fileName, rand.Int())
+
+	// write to tmp file
+	f, err = os.OpenFile(tmpFileName, os.O_RDWR|os.O_CREATE, DefaultFilePerm)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(f, "%s\t%d\t%s\n", currFile, offset, table)
+	if err != nil {
+		f.Close()
+		return err
+	}
+	f.Sync()
+	f.Close()
+
+	return os.Rename(tmpFileName, fileName)
 }
 
 // AppendDoneFileInode 将处理完的文件路径、inode以及完成时间写入doneFile中

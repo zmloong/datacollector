@@ -5,5 +5,6 @@ import (
 	_ "datacollector/reader/autofile"
 	_ "datacollector/reader/bufreader"
 	_ "datacollector/reader/kafka"
+	_ "datacollector/reader/mysql"
 	_ "datacollector/reader/socket"
 )
