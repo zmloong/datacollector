@@ -26,7 +26,7 @@ var DEFAULT_PORT = 3000
 
 const (
 	StatsShell = "stats"
-	PREFIX     = "/datacollector"
+	PREFIX     = "/logkit"
 )
 
 type RestService struct {
