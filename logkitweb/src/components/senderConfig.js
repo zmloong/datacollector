@@ -5,7 +5,7 @@ import {
   Select,
   Checkbox
 } from 'antd';
-import {getSenderOptionsFormData, getSenderOptions} from '../services/datacollector';
+import {getSenderOptionsFormData, getSenderOptions} from '../services/logkit';
 import config from '../store/config'
 import moment from 'moment'
 import _ from "lodash";
@@ -93,15 +93,15 @@ class Sender extends Component {
         })
         getSenderOptionsFormData().then(item => {
           if (item.code === 'L200') {
-            if("guanan" in item.data){
-              item.data["guanan"].forEach(function (val, index, arr) {
+            if("pandora" in item.data){
+              item.data["pandora"].forEach(function (val, index, arr) {
                 if(isMetric === "true"){
-                  if(val.KeyName === "guanan_extra_info") {
-                    item.data["guanan"][index].ChooseOptions = trueDefault
+                  if(val.KeyName === "pandora_extra_info") {
+                    item.data["pandora"][index].ChooseOptions = trueDefault
                   }
                 }else{
-                  if(val.KeyName === "guanan_extra_info") {
-                    item.data["guanan"][index].ChooseOptions = falseDefault
+                  if(val.KeyName === "pandora_extra_info") {
+                    item.data["pandora"][index].ChooseOptions = falseDefault
                   }
                 }
               })
@@ -145,7 +145,7 @@ class Sender extends Component {
       let isAdvanceDependHide = advanceDependValue === 'false' || advanceDependValue === false
       if (ele.ChooseOnly == false) {
         if (ele.KeyName == 'name' && window.isCopy != true) {
-          ele.Default = "guanan.sender." + moment().format("YYYYMMDDHHmmss");
+          ele.Default = "pandora.sender." + moment().format("YYYYMMDDHHmmss");
         }
         formItem = (
           <FormItem key={index}

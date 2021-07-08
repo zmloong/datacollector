@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {
   getRunnerVersion,
   getIsCluster
-} from '../services/datacollector';
+} from '../services/logkit';
 import CreateLogRunner from './createLogContainer'
 import RunnerTable from './runner/runnerTable'
 import MachineTable from './machine/machineTable'
@@ -168,7 +168,7 @@ class List extends Component {
               onCollapse={this.onCollapse}
           >
             <div className="logo">{this.state.collapsed === false ? (
-            <img style={{ marginLeft: '15px' }} src='../../../static/datacollectorIcon.png'></img>) : (
+            <img style={{ marginLeft: '15px' }} src='../../../static/logkitIcon.png'></img>) : (
                 <img src='../../../static/favicon.ico'></img>)}</div>
             <Menu theme="dark" defaultSelectedKeys={['runner']} mode="inline" onClick={this.changeMenu}>
               {window.isCluster === true ? (<Menu.Item key="tag">
@@ -188,13 +188,13 @@ class List extends Component {
           </Sider>
           <Layout>
             <Header className="header" style={{background: '#fff', padding: 0}}> 
-              七牛Datacollector监控中心{this.state.version}
+              七牛Logkit监控中心{this.state.version}
               <div style={{float: 'right'}}>
-                <a target="_blank" href="https://github.com/guanan/datacollector">
-                <Tag color="#108ee9"><Icon type="github" style={{ fontSize: 12, color: 'white' }} />datacollector</Tag> </a>
-                <a target="_blank" href="https://github.com/guanan/datacollector/wiki">
+                <a target="_blank" href="https://github.com/qiniu/logkit">
+                <Tag color="#108ee9"><Icon type="github" style={{ fontSize: 12, color: 'white' }} />logkit</Tag> </a>
+                <a target="_blank" href="https://github.com/qiniu/logkit/wiki">
                 <Tag color="#108ee9"><Icon type="question-circle-o" style={{ fontSize: 12, color: 'white' }} />帮助文档</Tag> </a>
-                <a target="_blank" href="https://guanan.github.io/guanan-docs/#/"><Tag
+                <a target="_blank" href="https://qiniu.github.io/pandora-docs/#/"><Tag
                   color="#108ee9">Pandora产品</Tag>
                 </a>
               </div>
@@ -262,7 +262,7 @@ class List extends Component {
               </div>
             </Content>) : null}
             <Footer style={{textAlign: 'center'}}>
-              七牛datacollector监控中心 <Icon type="copyright" />2018 七牛云
+              七牛logkit监控中心 <Icon type="copyright" />2018 七牛云
             </Footer>
           </Layout>
 

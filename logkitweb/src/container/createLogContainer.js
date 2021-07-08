@@ -13,7 +13,7 @@ import {
   putConfigData,
   postClusterConfigData,
   putClusterConfigData
-} from '../services/datacollector';
+} from '../services/logkit';
 
 const Step = Steps.Step;
 const {Header, Content, Footer, Sider} = Layout;
@@ -284,7 +284,7 @@ class CreateLogRunner extends Component {
   render() {
     const {current} = this.state;
     return (
-        <div className="datacollector-create-container">
+        <div className="logkit-create-container">
           <Steps current={current}>
             {steps.map(item => <Step key={item.title} title={item.title}/>)}
           </Steps>

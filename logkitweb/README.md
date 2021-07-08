@@ -1,6 +1,6 @@
 #author zhonghuiping
 
-# datacollectorWeb
+# logkitWeb
 
 [![React](https://img.shields.io/badge/react-^15.6.1-brightgreen.svg?style=flat-square)](https://github.com/facebook/react)
 [![Ant Design](https://img.shields.io/badge/ant--design-^2.9.0-yellowgreen.svg?style=flat-square)](https://github.com/ant-design/ant-design)
@@ -56,7 +56,7 @@
 │   ├── index.css                       # 全局样式文件
 │   ├── index.js                        # 入口文件
 │   ├── services                        # 数据接口
-│   │   └── datacollector.js
+│   │   └── logkit.js
 │   ├── store                           # 数据仓库
 │   │   └── config.js
 │   └── utils                           # 工具函数
@@ -69,11 +69,11 @@
 克隆项目文件:
 
 ```bash
-git clone https://github.com/guanan/datacollector.git
+git clone https://github.com/qiniu/logkit.git
 ```
 
 进入目录安装依赖:
-cd datacollector/datacollectorweb
+cd logkit/logkitweb
 
 ```bash
 #开始前请确保安装了npm 或者 yarn (npm在安装node的时候就自带了 可以 npm -v查看版本信息)
@@ -85,7 +85,7 @@ npm i 或者 yarn install
 
 ```bash
 yarn start
-# 注意: (package.json里面的  "proxy": "http://localhost:3000" 必须跟 datacollector.conf里面的bind_host的端口相同)
+# 注意: (package.json里面的  "proxy": "http://localhost:3000" 必须跟 logkit.conf里面的bind_host的端口相同)
 打开 http://localhost:3000/
 ```
 

@@ -151,7 +151,7 @@ func NewSeqFile(meta *reader.Meta, path string, ignoreHidden, newFileNewLine boo
 		sf.offset = 0
 	}
 	sf.dir = dir
-	sf.inodeOffset = meta.GetDoneFileInode(sf.inodeSensitive)
+	sf.inodeOffset = meta.GetDoneFileInode2(sf.inodeSensitive)
 	sf.updateInodeOffset(whence)
 	sf.currFile = currFile
 	sf.name = "SeqFile:" + dir

@@ -18,7 +18,7 @@ import {
   postClusterDeleteSlaveTag,
   startClusterRunner,
   getClusterConfigData
-} from '../../services/datacollector';
+} from '../../services/logkit';
 import {titles} from './constant'
 import _ from "lodash";
 import * as uuid from 'uuid'

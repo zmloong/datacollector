@@ -624,3 +624,24 @@ func ExtractField(slice []string) ([]string, error) {
 	}
 	return nil, errors.New("parameters error,  you can write two parameters like: %%{[type]}, default or only one: default")
 }
+func ParseTimeZoneOffset(zoneoffset string) (ret int) {
+	zoneoffset = strings.TrimSpace(zoneoffset)
+	if zoneoffset == "" {
+		return
+	}
+	mi := false
+	if strings.HasPrefix(zoneoffset, "-") {
+		mi = true
+	}
+	zoneoffset = strings.Trim(zoneoffset, "+-")
+	i, err := strconv.ParseInt(zoneoffset, 10, 64)
+	if err != nil {
+		log.Errorf("parse %v error %v, ignore zoneoffset...", zoneoffset, err)
+		return
+	}
+	ret = int(i)
+	if mi {
+		ret = 0 - ret
+	}
+	return
+}

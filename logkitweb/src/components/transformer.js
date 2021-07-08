@@ -12,7 +12,7 @@ import {
   Tooltip,
   Popconfirm
 } from 'antd';
-import {getTransformOptions, getTransformUsages} from '../services/datacollector';
+import {getTransformOptions, getTransformUsages} from '../services/logkit';
 import config from '../store/config'
 import moment from 'moment'
 import _ from "lodash"
@@ -233,7 +233,7 @@ class Transformer extends Component {
       let isAdvanceDependHide = advanceDependValue === 'false' || advanceDependValue === false
       if (ele.ChooseOnly == false) {
         if (ele.KeyName == 'name') {
-          ele.Default = "guanan.sender." + moment().format("YYYYMMDDHHmmss");
+          ele.Default = "pandora.sender." + moment().format("YYYYMMDDHHmmss");
         }
         formItem = (
           <FormItem key={index}

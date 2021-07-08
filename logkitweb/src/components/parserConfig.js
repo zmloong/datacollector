@@ -14,7 +14,7 @@ import {
   getSourceParseOptions,
   getSourceParsesamplelogs,
   postParseData
-} from '../services/datacollector';
+} from '../services/logkit';
 
 const Option = Select.Option
 const FormItem = Form.Item;
@@ -151,7 +151,7 @@ class Parser extends Component {
       let isAdvanceDependHide = advanceDependValue === 'false' || advanceDependValue === false
       if (ele.ChooseOnly == false) {
         if (ele.KeyName == 'name' && window.isCopy != true) {
-          ele.Default = "guanan.parser." + moment().format("YYYYMMDDHHmmss");
+          ele.Default = "pandora.parser." + moment().format("YYYYMMDDHHmmss");
         }
         if (ele.KeyName === 'grok_custom_patterns') {
           formItem = (

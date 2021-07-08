@@ -2,5 +2,6 @@
 package builtin
 
 import (
+	_ "datacollector/parser/csv"
 	_ "datacollector/parser/raw"
 )

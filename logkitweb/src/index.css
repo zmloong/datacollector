@@ -11,13 +11,13 @@ body {
   float: right;
 }
 
-.datacollector-container {
+.logkit-container {
   padding-top: 2%;
   margin: auto;
   width: 90%
 }
 
-.datacollector-container .index-btn {
+.logkit-container .index-btn {
   width:300px;
   margin-right: 50px;
   margin-bottom: 8px;
@@ -56,7 +56,7 @@ body {
   text-align: center;
 }
 
-.datacollector-create-container {
+.logkit-create-container {
   padding-top: 2%;
   margin: auto;
   width: 90%;
@@ -78,7 +78,7 @@ body {
   padding: 20px;
 }
 
-.datacollector-header {
+.logkit-header {
   background: #108ee9;
   padding: 10px 20px 10px 20px;
   border-radius: 0px 0px 0px 0px;
@@ -87,11 +87,11 @@ body {
   z-index: 999;
 }
 
-.datacollector-body {
+.logkit-body {
   padding-top: 55px;
 }
 
-.datacollector-title {
+.logkit-title {
   float: left;
   color: #fff;
 }
@@ -100,7 +100,7 @@ body {
   margin-right: 10px;
 }
 
-.datacollector-tip {
+.logkit-tip {
   line-height: 35px;
   color: #fff;
 }

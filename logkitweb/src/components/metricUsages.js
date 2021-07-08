@@ -6,7 +6,7 @@ import {
 } from 'antd';
 import _ from "lodash";
 import config from '../store/config'
-import {getMetricUsages} from '../services/datacollector';
+import {getMetricUsages} from '../services/logkit';
 
 const Option = Select.Option
 const FormItem = Form.Item;

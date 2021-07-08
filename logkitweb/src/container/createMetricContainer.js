@@ -8,7 +8,7 @@ import RenderConfig from '../components/renderConfig'
 import config from '../store/config'
 import {isJSON} from '../utils/tools'
 import moment from 'moment'
-import {postConfigData, putConfigData, putClusterConfigData, postClusterConfigData} from '../services/datacollector';
+import {postConfigData, putConfigData, putClusterConfigData, postClusterConfigData} from '../services/logkit';
 import _ from "lodash";
 
 const Step = Steps.Step;
@@ -291,7 +291,7 @@ class CreateMetricRunner extends Component {
   render() {
     const {current} = this.state;
     return (
-        <div className="datacollector-create-container">
+        <div className="logkit-create-container">
           <Steps current={current}>
             {steps.map(item => <Step key={item.title} title={item.title}/>)}
           </Steps>

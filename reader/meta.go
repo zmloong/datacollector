@@ -71,8 +71,8 @@ type Meta struct {
 	encodeTag         string                 //记录文件编码的标签名称
 	TagFile           string                 //记录tag文件路径的标签名称
 	tags              map[string]interface{} //记录tag文件内容
-	Readlimit         int                    //读取磁盘限速单位 MB/s
 	Delimiter         string                 //文件换行符
+	Readlimit         int                    //读取磁盘限速单位 MB/s
 	statisticPath     string                 // 记录 runner 计数信息
 	ftSaveLogPath     string                 // 记录 ft_sender 日志信息
 	RunnerName        string
@@ -177,12 +177,6 @@ func NewMetaWithConf(conf conf.MapConf) (meta *Meta, err error) {
 	filedonepath, _ := conf.GetStringOr(KeyFileDone, metaPath)
 	donefileRetention, _ := conf.GetIntOr(doneFileRetention, DefautFileRetention)
 	readlimit, _ := conf.GetIntOr(KeyReadIOLimit, defaultIOLimit)
-	delim, _ := conf.GetStringOr(KeyDelimiter, "")
-	delimiter, err := strconv.Unquote(delim)
-	if err != nil {
-		log.Warnf("Runner[%v] %s - unquote key %s failed, will use [%v] as value, err:%v", runnerName, metaPath, KeyDelimiter, delim, err)
-		delimiter = delim
-	}
 	meta, err = NewMeta(metaPath, filedonepath, logPath, mode, tagFile, donefileRetention)
 	if err != nil {
 		log.Warnf("Runner[%v] %s - newMeta failed, err:%v", runnerName, metaPath, err)
@@ -201,7 +195,6 @@ func NewMetaWithConf(conf conf.MapConf) (meta *Meta, err error) {
 	meta.dataSourceTag = datasourceTag
 	meta.encodeTag = encodeTag
 	meta.Readlimit = readlimit * 1024 * 1024 //readlimit*MB
-	meta.Delimiter = delimiter
 	meta.RunnerName = runnerName
 	return
 }
@@ -292,9 +285,8 @@ func (m *Meta) CleanExpiredSubMetas(expire time.Duration) {
 		// 二次确认 submeta 目录在删除前的一刻仍旧是过期状态才执行删除操作
 		if hasSubMetaExpired(path, expire) {
 			numCleaned++
-			if err := os.RemoveAll(path); err != nil {
-				log.Errorf("Expired submeta %q has been removed with error %v", path, err)
-			}
+			err := os.RemoveAll(path)
+			log.Infof("Expired submeta %q has been removed with error %v", path, err)
 		}
 		delete(m.subMetaExpired, path)
 	}
@@ -517,18 +509,6 @@ func (m *Meta) WriteOffset(currFile string, offset int64) (err error) {
 	return os.Rename(tmpFileName, fileName)
 }
 
-// AppendDoneFile 将处理完的文件写入doneFile中
-func (m *Meta) AppendDoneFile(path string) (err error) {
-	f, err := os.OpenFile(m.DoneFile(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, DefaultFilePerm)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	_, err = fmt.Fprintf(f, "%s\n", path)
-	return
-}
-
 // WriteOffset 将当前文件和offset写入meta中
 func (m *Meta) WriteOffsetForSql(currFile string, offset int64, table string) (err error) {
 	var f *os.File
@@ -551,8 +531,32 @@ func (m *Meta) WriteOffsetForSql(currFile string, offset int64, table string) (e
 	return os.Rename(tmpFileName, fileName)
 }
 
+// AppendDoneFile 将处理完的文件写入doneFile中
+func (m *Meta) AppendDoneFile(path string) (err error) {
+	f, err := os.OpenFile(m.DoneFile(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, DefaultFilePerm)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	_, err = fmt.Fprintf(f, "%s\n", path)
+	return
+}
+
 // AppendDoneFileInode 将处理完的文件路径、inode以及完成时间写入doneFile中
-func (m *Meta) AppendDoneFileInode(path string, inode uint64, offset int64) (err error) {
+func (m *Meta) AppendDoneFileInode(path string, inode uint64) (err error) {
+	f, err := os.OpenFile(m.DoneFile(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, DefaultFilePerm)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	_, err = fmt.Fprintf(f, "%s\t%v\t%s\n", path, inode, time.Now().Format(time.RFC3339Nano))
+	return
+}
+
+// AppendDoneFileInode 将处理完的文件路径、inode以及完成时间写入doneFile中
+func (m *Meta) AppendDoneFileInode2(path string, inode uint64, offset int64) (err error) {
 	f, err := os.OpenFile(m.DoneFile(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, DefaultFilePerm)
 	if err != nil {
 		return
@@ -562,29 +566,6 @@ func (m *Meta) AppendDoneFileInode(path string, inode uint64, offset int64) (err
 	_, err = fmt.Fprintf(f, "%s\t%v\t%v\t%s\n", path, inode, offset, time.Now().Format(time.RFC3339Nano))
 	return
 }
-
-func (m *Meta) SyncDoneFileInode(inodeOffset map[string]int64) (err error) {
-	f, err := os.OpenFile(m.DoneFile(), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, DefaultFilePerm)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	var data bytes.Buffer
-	for inodeFile, offset := range inodeOffset {
-		pos := strings.LastIndex(inodeFile, "_")
-		if pos == -1 {
-			continue
-		}
-		_, err = data.WriteString(fmt.Sprintf("%s\t%v\t%v\t%s\n", inodeFile[:pos], inodeFile[pos+1:], offset, time.Now().Format(time.RFC3339Nano)))
-		if err != nil {
-			log.Errorf("write string to bytes.Buffer failed when sync done file inode, error: ", err)
-		}
-	}
-	_, err = fmt.Fprintf(f, data.String())
-	return
-}
-
 func (m *Meta) GetDoneFileContent() ([]string, error) {
 	return m.getDoneFileContent()
 }
@@ -610,7 +591,26 @@ func JoinFileInode(filename, inode string) string {
 	return filepath.Base(filename) + "_" + inode
 }
 
-func (m *Meta) GetDoneFileInode(inodeSensitive bool) map[string]int64 {
+func (m *Meta) GetDoneFileInode(inodeSensitive bool) map[string]bool {
+	inodeMap := make(map[string]bool)
+	contents, err := m.getDoneFileContent()
+	if err != nil {
+		log.Error(err)
+		return inodeMap
+	}
+	for _, v := range contents {
+		sps := strings.Split(v, "\t")
+		if len(sps) >= 2 {
+			if inodeSensitive {
+				inodeMap[JoinFileInode(sps[0], sps[1])] = true
+			} else {
+				inodeMap[sps[0]] = true
+			}
+		}
+	}
+	return inodeMap
+}
+func (m *Meta) GetDoneFileInode2(inodeSensitive bool) map[string]int64 {
 	inodeMap := make(map[string]int64)
 	contents, err := m.getDoneFileContent()
 	if err != nil {
@@ -923,4 +923,25 @@ func GetMetaOption(conf conf.MapConf) (string, string, string, error) {
 		}
 	}
 	return mode, logPath, metaPath, nil
+}
+func (m *Meta) SyncDoneFileInode(inodeOffset map[string]int64) (err error) {
+	f, err := os.OpenFile(m.DoneFile(), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, DefaultFilePerm)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	var data bytes.Buffer
+	for inodeFile, offset := range inodeOffset {
+		pos := strings.LastIndex(inodeFile, "_")
+		if pos == -1 {
+			continue
+		}
+		_, err = data.WriteString(fmt.Sprintf("%s\t%v\t%v\t%s\n", inodeFile[:pos], inodeFile[pos+1:], offset, time.Now().Format(time.RFC3339Nano)))
+		if err != nil {
+			log.Errorf("write string to bytes.Buffer failed when sync done file inode, error: ", err)
+		}
+	}
+	_, err = fmt.Fprintf(f, data.String())
+	return
 }

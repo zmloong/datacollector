@@ -15,7 +15,7 @@ import {
   postClusterSlaveTag,
   postClusterDeleteSlaveTag,
   deleteClusterSlaveTag
-} from '../../services/datacollector';
+} from '../../services/logkit';
 import * as uuid from 'uuid'
 import {titles} from '../tag/constant'
 import config from '../../store/config'

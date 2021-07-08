@@ -8,7 +8,7 @@ import {
 } from 'antd';
 import config from '../store/config'
 import _ from "lodash";
-import {getSourceOptionsFormData, getSourceOptions} from '../services/datacollector';
+import {getSourceOptionsFormData, getSourceOptions} from '../services/logkit';
 
 const Option = Select.Option
 const FormItem = Form.Item;

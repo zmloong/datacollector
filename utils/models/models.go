@@ -97,9 +97,9 @@ const (
 var (
 	MaxProcs                     = 1
 	NumCPU                       = runtime.NumCPU()
-	LogkitAutoCreateDescription  = "由logkit日志收集自动创建"
-	MetricAutoCreateDescription  = "由logkit监控收集自动创建"
-	SelfLogAutoCreateDescription = "由logkit收集自身日志创建"
+	LogkitAutoCreateDescription  = "由datacollector日志收集自动创建"
+	MetricAutoCreateDescription  = "由datacollector监控收集自动创建"
+	SelfLogAutoCreateDescription = "由datacollector收集自身日志创建"
 
 	// matches named captures that contain a modifier.
 	//   ie,

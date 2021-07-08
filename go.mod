@@ -11,11 +11,14 @@ require (
 	github.com/denisenkom/go-mssqldb v0.10.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/godror/godror v0.25.3
+	github.com/jlaffaye/ftp v0.0.0-20210307004419-5d4190119067
 	github.com/json-iterator/go v1.1.11
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/lestrrat-go/strftime v1.0.4
 	github.com/lib/pq v1.10.2
+	github.com/mitchellh/gox v1.0.1 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/oschwald/geoip2-golang v1.5.0
